@@ -24,6 +24,7 @@
             transition: visibility 0.5s, opacity 0.5s linear;
         }
         #toast.show { visibility: visible; opacity: 1; }
+        /* Full-screen, scroll-snapping reel container */
         .reels-active { overflow: hidden; }
         #reels-page.reels-active {
             height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory;
@@ -32,6 +33,25 @@
         #reels-page.reels-active::-webkit-scrollbar { display: none; }
         #reels-page .reel-item {
             height: 100vh; width: 100%; scroll-snap-align: start; flex-shrink: 0;
+        }
+        /* Style for radio buttons */
+        .form-radio {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: inline-block;
+            vertical-align: middle;
+            background-origin: border-box;
+            user-select: none;
+            flex-shrink: 0;
+            border-radius: 100%;
+            border-width: 2px;
+            border-color: #6b7280; /* gray-500 */
+        }
+        .form-radio:checked {
+            border-color: #4f46e5; /* indigo-600 */
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+            background-color: #4f46e5; /* indigo-600 */
         }
     </style>
 </head>
@@ -85,7 +105,9 @@
     <main id="create-page" class="page-content container mx-auto max-w-lg p-4 mt-6 pb-24 hidden">
         <!-- We wrap this in a form for easy submission -->
         <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8 text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Create New Video Post</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Create New Post</h2>
+            
+            <!-- Upload Box -->
             <div class="border-4 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center">
                 <i class="fas fa-cloud-upload-alt text-7xl text-indigo-400"></i>
                 <p class="text-gray-600 mt-4 mb-6">Drag & drop your video here</p>
@@ -94,8 +116,21 @@
                 </button>
                 <p class="text-sm text-gray-500 mt-2">(Prototype: Just fill the fields below)</p>
             </div>
-            <input id="post-title" class="w-full border border-gray-300 rounded-lg p-3 mt-6 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Video Title..." required />
-            <input id="post-thumbnail" class="w-full border border-gray-300 rounded-lg p-3 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Thumbnail URL (e.g., https://placehold.co/...)" required />
+
+            <!-- NEW: Post Type Toggle -->
+            <div class="flex justify-center space-x-6 mt-6">
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="postType" value="video" class="form-radio h-4 w-4 text-indigo-600 border-gray-400 focus:ring-indigo-500" checked>
+                    <span class="ml-2 text-gray-700 font-medium">Video (Home Feed)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="postType" value="reel" class="form-radio h-4 w-4 text-indigo-600 border-gray-400 focus:ring-indigo-500">
+                    <span class="ml-2 text-gray-700 font-medium">Reel (Reels Feed)</span>
+                </label>
+            </div>
+
+            <input id="post-title" class="w-full border border-gray-300 rounded-lg p-3 mt-6 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Title or Description..." required />
+            <input id="post-thumbnail" class="w-full border border-gray-300 rounded-lg p-3 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Thumbnail/Poster URL (e.g., https://placehold.co/...)" required />
             
             <button type="submit" id="upload-btn" class="bg-red-500 text-white font-bold px-8 py-3 rounded-full shadow-md hover:bg-red-600 transition duration-300 mt-4 w-full">
                 Upload
@@ -103,28 +138,11 @@
         </form>
     </main>
     
-    <!-- Reels Page (Placeholder) -->
+    <!-- Reels Page (Dynamic Container) -->
     <main id="reels-page" class="page-content hidden">
-        <div class="reel-item bg-black relative w-full overflow-hidden">
-            <img src="https://placehold.co/400x700/000000/ffffff?text=Reel+1" class="w-full h-full object-cover">
-            <div class="absolute bottom-20 left-0 p-4 text-white"><p class="font-bold">@CreatorAlice</p><p class="text-sm">This is my first VidChat Reel! #fyp</p></div>
-            <div class="absolute bottom-20 right-2 flex flex-col space-y-4 text-white text-2xl">
-                <button class="flex flex-col items-center"><i class="fas fa-heart"></i><span class="text-sm">1.2k</span></button>
-                <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm">105</span></button>
-                <button class="flex flex-col items-center"><i class="fas fa-star"></i><span class="text-sm">88</span></button>
-                <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm">Share</span></button>
-            </div>
-        </div>
-        <div class="reel-item bg-black relative w-full overflow-hidden">
-            <img src="https://placehold.co/400x700/333333/ffffff?text=Reel+2" class="w-full h-full object-cover">
-            <div class="absolute bottom-20 left-0 p-4 text-white"><p class="font-bold">@CreatorCharlie</p><p class="text-sm">Travel goals! ✈️</p></div>
-            <div class="absolute bottom-20 right-2 flex flex-col space-y-4 text-white text-2xl">
-                <button class="flex flex-col items-center"><i class="fas fa-heart"></i><span class="text-sm">3.4k</span></button>
-                <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm">210</span></button>
-                <button class="flex flex-col items-center"><i class="fas fa-star"></i><span class="text-sm">150</span></button>
-                <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm">Share</span></button>
-            </div>
-        </div>
+        <!-- Loading Message -->
+        <p id="loading-reels" class="text-white text-center text-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Loading reels...</p>
+        <!-- Reels will be dynamically inserted here -->
     </main>
 
     <!-- Chats Page (Placeholder) -->
@@ -222,7 +240,8 @@
         let db, auth;
         let currentUserId = null;
         let currentUserData = {};
-        let postsColRef; // <-- Declare postsColRef here
+        let postsColRef;
+        let reelsColRef; // NEW: Collection for Reels
         
         // --- UI ELEMENTS ---
         const sparkBalanceEl = document.getElementById('spark-balance');
@@ -235,17 +254,15 @@
         const bonusSubtitle = document.getElementById('bonus-subtitle');
         const videoGridContainer = document.getElementById('video-grid-container');
         const loadingPostsEl = document.getElementById('loading-posts');
+        const reelsPageContainer = document.getElementById('reels-page'); // NEW: Reels container
+        const loadingReelsEl = document.getElementById('loading-reels'); // NEW: Reels loading
         const createPostForm = document.getElementById('create-post-form');
         const uploadBtn = document.getElementById('upload-btn');
         const accountUserIdEl = document.getElementById('account-userid');
         const userPostCountEl = document.getElementById('user-post-count'); // For Account page
 
         // --- FIREBASE CONFIG (Mandatory) ---
-        // This `appId` is for the artifact system, not Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        // *** THIS IS YOUR LIVE CONFIGURATION ***
-        // This is the fallback config for local testing (e.g., in VS Code)
         const userProvidedConfig = {
           apiKey: "AIzaSyDa1qEbObnYVIpMvXoF8afXBvcG-DhR_uY",
           authDomain: "vidchat-2011.firebaseapp.com",
@@ -255,17 +272,9 @@
           appId: "1:1091989305105:web:f6da79a45105151b0dfeb0",
           measurementId: "G-SM1VE2SE0B"
         };
-        
-        // --- FIX ---
-        // Prioritize the Canvas environment's config if it exists.
-        // This ensures the auth token (initialAuthToken) matches the config.
-        // Fall back to your config for local testing.
         const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config !== '{}'
             ? JSON.parse(__firebase_config) 
             : userProvidedConfig;
-        // *** END OF FIX ***
-        
-        // This is for the artifact system's auth
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 
@@ -281,46 +290,38 @@
         // --- FIREBASE INITIALIZATION ---
         async function initializeFirebase() {
             try {
-                // Initialize Firebase with YOUR config
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // --- FIX: Initialize postsColRef AFTER db is initialized ---
+                // Initialize collection references
                 postsColRef = collection(db, "posts");
+                reelsColRef = collection(db, "reels"); // NEW
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUserId = user.uid;
                         accountUserIdEl.textContent = `User ID: ${currentUserId.substring(0, 8)}...`;
                         
-                        // User is signed in, now get/create their data
-                        // NOTE: Using 'public/data' for posts and 'users' for private data
-                        // This matches the common security rules structure.
                         await setupUserDocument(currentUserId);
-                        
-                        // Start listening for user data changes (e.g., spark balance)
                         listenToUserDocument(currentUserId);
                         
-                        // Start listening for posts
+                        // Start listening to both collections
                         listenToPosts();
+                        listenToReels(); // NEW
 
                     } else {
-                        // User is signed out.
                         currentUserId = null;
                         currentUserData = {};
-                        updateSparkBalance(0); // Reset UI
+                        updateSparkBalance(0);
                         accountUserIdEl.textContent = "Not logged in.";
                     }
                 });
 
-                // Sign in. If we are in the artifact environment, use its token.
-                // Otherwise, sign in anonymously (for local VS Code testing)
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
-Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` you encountered. I've corrected the `script` tag.
                 }
 
             } catch (error) {
@@ -330,17 +331,14 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
         }
 
         // --- USER DATA FUNCTIONS ---
-        // Using a path that works well with standard "test mode" rules
         async function setupUserDocument(userId) {
             const userDocRef = doc(db, "users", userId); 
             const userDocSnap = await getDoc(userDocRef);
-
             if (!userDocSnap.exists()) {
-                // New user, create their document
                 await setDoc(userDocRef, {
                     uid: userId,
                     username: "AnonymousUser",
-                    sparkBalance: 100, // Welcome bonus
+                    sparkBalance: 100,
                     lastBonusClaim: null,
                     postCount: 0
                 });
@@ -370,7 +368,6 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
             if (lastClaimTimestamp) {
                 const lastClaimDate = lastClaimTimestamp.toDate().toDateString();
                 const todayDate = new Date().toDateString();
-
                 if (lastClaimDate === todayDate) {
                     claimBonusBtn.disabled = true;
                     bonusSubtitle.textContent = "You've claimed your bonus for today.";
@@ -378,7 +375,6 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
                     claimBonusBtn.classList.remove('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
                     claimBonusBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
                 } else {
-                    // It's a new day, re-enable the button
                     claimBonusBtn.disabled = false;
                     bonusSubtitle.textContent = "Claim your daily engagement bonus.";
                     claimBonusBtn.textContent = "Claim 10 ✨";
@@ -386,86 +382,42 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
                     claimBonusBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
                 }
             } else {
-                 // Never claimed, enable button
                 claimBonusBtn.disabled = false;
                 bonusSubtitle.textContent = "Claim your daily engagement bonus.";
                 claimBonusBtn.textContent = "Claim 10 ✨";
             }
         }
 
-        // --- POST/VIDEO DATA FUNCTIONS ---
-        // Using a simple 'posts' collection for "test mode"
-        // const postsColRef = collection(db, "posts"); // <-- This was the bug. It's moved.
-
-        // NEW: Function to add starter videos if DB is empty
+        // --- POST/VIDEO DATA FUNCTIONS (HOME PAGE) ---
         async function populateStarterVideos() {
-            if (!postsColRef) return; // Guard clause in case db init failed
+            if (!postsColRef) return;
             const q = query(postsColRef, limit(1));
             const snapshot = await getDocs(q);
-            
             if (snapshot.empty) {
-                console.log("Database is empty. Adding starter videos...");
+                console.log("Database 'posts' is empty. Adding starter videos...");
                 const batch = writeBatch(db);
-
                 const starterVideos = [
-                    {
-                        title: "Welcome to VidChat!",
-                        thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!",
-                        creatorUsername: "VidChat Team",
-                        creatorId: "system",
-                        sparkCount: 25,
-                        createdAt: serverTimestamp()
-                    },
-                    {
-                        title: "My First Short Film",
-                        thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film",
-                        creatorUsername: "CreatorAlice",
-                        creatorId: "alice123",
-                        sparkCount: 10,
-                        createdAt: serverTimestamp()
-                    },
-                    {
-                        title: "How to Earn Sparks",
-                        thumbnailUrl: "https://placehold.co/600x400/f59e0b/ffffff?text=Earn+✨",
-                        creatorUsername: "VidChat Team",
-                        creatorId: "system",
-                        sparkCount: 42,
-                        createdAt: serverTimestamp()
-                    }
+                    { title: "Welcome to VidChat!", thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 25, createdAt: serverTimestamp() },
+                    { title: "My First Short Film", thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film", creatorUsername: "CreatorAlice", creatorId: "alice123", sparkCount: 10, createdAt: serverTimestamp() },
+                    { title: "How to Earn Sparks", thumbnailUrl: "https://placehold.co/600x400/f59e0b/ffffff?text=Earn+✨", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 42, createdAt: serverTimestamp() }
                 ];
-
-                starterVideos.forEach(video => {
-                    const newPostRef = doc(postsColRef); // Use the initialized postsColRef
-                    batch.set(newPostRef, video);
-                });
-
+                starterVideos.forEach(video => batch.set(doc(postsColRef), video));
                 await batch.commit();
-            } else {
-                console.log("Database already has videos. Skipping population.");
             }
         }
 
         function listenToPosts() {
-            if (!postsColRef) return; // Guard clause
-            // First, check if we need to add starter videos
+            if (!postsColRef) return;
             populateStarterVideos().then(() => {
-                // After check, start listening for real-time updates
-                const q = query(postsColRef); // Can add orderBy('createdAt', 'desc') here
-
+                const q = query(postsColRef);
                 onSnapshot(q, (querySnapshot) => {
-                    videoGridContainer.innerHTML = ''; // Clear existing posts
-                    
+                    videoGridContainer.innerHTML = ''; // Clear
                     if (querySnapshot.empty) {
                         loadingPostsEl.textContent = "No videos posted yet. Be the first!";
                         videoGridContainer.appendChild(loadingPostsEl);
                         return;
                     }
-
-                    querySnapshot.forEach((doc) => {
-                        const post = doc.data();
-                        const postId = doc.id;
-                        createPostElement(postId, post);
-                    });
+                    querySnapshot.forEach((doc) => createPostElement(doc.id, doc.data()));
                 }, (error) => {
                     console.error("Error listening to posts:", error);
                     loadingPostsEl.textContent = "Error loading videos.";
@@ -476,13 +428,11 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
         function createPostElement(postId, post) {
             const article = document.createElement('article');
             article.className = "bg-white rounded-lg shadow-md overflow-hidden post";
-            article.dataset.postId = postId; // Store Firestore ID
+            article.dataset.postId = postId;
 
-            // Handle potential null or invalid timestamp
             let timestamp = "Just now";
             if (post.createdAt && post.createdAt.toDate) {
                 const date = post.createdAt.toDate();
-                // Simple time ago logic
                 const seconds = Math.floor((new Date() - date) / 1000);
                 if (seconds > 3600) timestamp = `${Math.floor(seconds / 3600)}h ago`;
                 else if (seconds > 60) timestamp = `${Math.floor(seconds / 60)}m ago`;
@@ -511,14 +461,82 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
                 </div>
             `;
             
-            // Add tip button event listener
             const tipButton = article.querySelector('.tip-button');
             tipButton.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent other clicks
-                handleTip(postId, tipButton);
+                e.stopPropagation();
+                handleTip(postId, tipButton, 'posts'); // UPDATED: Pass collection name
             });
             
-            videoGridContainer.prepend(article); // Use prepend to show newest first
+            videoGridContainer.prepend(article);
+        }
+        
+        // --- NEW: REELS DATA FUNCTIONS (REELS PAGE) ---
+        async function populateStarterReels() {
+            if (!reelsColRef) return;
+            const q = query(reelsColRef, limit(1));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) {
+                console.log("Database 'reels' is empty. Adding starter reels...");
+                const batch = writeBatch(db);
+                const starterReels = [
+                    { title: "My first VidChat Reel! #fyp", thumbnailUrl: "https://placehold.co/400x700/000000/ffffff?text=Reel+1", creatorUsername: "CreatorAlice", creatorId: "alice123", sparkCount: 88, likeCount: 1200, commentCount: 105, createdAt: serverTimestamp() },
+                    { title: "Travel goals! ✈️ #travel", thumbnailUrl: "https://placehold.co/400x700/333333/ffffff?text=Reel+2", creatorUsername: "CreatorCharlie", creatorId: "charlie456", sparkCount: 150, likeCount: 3400, commentCount: 210, createdAt: serverTimestamp() }
+                ];
+                starterReels.forEach(reel => batch.set(doc(reelsColRef), reel));
+                await batch.commit();
+            }
+        }
+
+        function listenToReels() {
+            if (!reelsColRef) return;
+            populateStarterReels().then(() => {
+                const q = query(reelsColRef); // Can add orderBy('createdAt', 'desc')
+                onSnapshot(q, (querySnapshot) => {
+                    reelsPageContainer.innerHTML = ''; // Clear
+                    if (querySnapshot.empty) {
+                        loadingReelsEl.textContent = "No reels posted yet.";
+                        reelsPageContainer.appendChild(loadingReelsEl);
+                        return;
+                    }
+                    querySnapshot.forEach((doc) => createReelElement(doc.id, doc.data()));
+                }, (error) => {
+                    console.error("Error listening to reels:", error);
+                    loadingReelsEl.textContent = "Error loading reels.";
+                });
+            });
+        }
+
+        function createReelElement(reelId, reel) {
+            const div = document.createElement('div');
+            div.className = "reel-item bg-black relative w-full overflow-hidden";
+            div.dataset.reelId = reelId;
+
+            div.innerHTML = `
+                <img src="${reel.thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x700/ef4444/ffffff?text=Image+Error'">
+                <div class="absolute bottom-20 left-0 p-4 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+                    <p class="font-bold">@${reel.creatorUsername}</p>
+                    <p class="text-sm">${reel.title}</p>
+                </div>
+                <div class="absolute bottom-20 right-2 flex flex-col space-y-5 text-white text-2xl" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+                    <button class="flex flex-col items-center"><i class="fas fa-heart"></i><span class="text-sm font-semibold">${reel.likeCount || 0}</span></button>
+                    <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm font-semibold">${reel.commentCount || 0}</span></button>
+                    <!-- DYNAMIC TIP BUTTON FOR REELS -->
+                    <button class="tip-button-reel flex flex-col items-center text-yellow-300">
+                        <i class="fas fa-star"></i>
+                        <span class="spark-total text-sm font-semibold">${reel.sparkCount || 0}</span>
+                    </button>
+                    <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm font-semibold">Share</span></button>
+                </div>
+            `;
+            
+            // Add tip button event listener
+            const tipButton = div.querySelector('.tip-button-reel');
+            tipButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleTip(reelId, tipButton, 'reels'); // UPDATED: Pass collection name
+            });
+
+            reelsPageContainer.appendChild(div);
         }
 
         // --- EVENT HANDLERS ---
@@ -526,57 +544,45 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
         // Handle Daily Bonus Claim
         claimBonusBtn.addEventListener('click', async () => {
             if (!currentUserId) return;
-
-            claimBonusBtn.disabled = true; // Disable to prevent double-click
+            claimBonusBtn.disabled = true;
             const userDocRef = doc(db, "users", currentUserId);
-
             try {
                 await updateDoc(userDocRef, {
                     sparkBalance: increment(10),
-                    lastBonusClaim: serverTimestamp() // Use server time
+                    lastBonusClaim: serverTimestamp()
                 });
                 showToast("🎁 10 Sparks claimed!");
             } catch (error) {
                 console.error("Error claiming bonus: ", error);
                 showToast("Error claiming bonus. Try again.");
-                claimBonusBtn.disabled = false; // Re-enable on error
+                claimBonusBtn.disabled = false;
             }
         });
 
-        // Handle Tipping
-        async function handleTip(postId, tipButton) {
-            if (!currentUserId) return;
+        // Handle Tipping (NOW DYNAMIC)
+        async function handleTip(docId, tipButton, collectionName) {
+            if (!currentUserId || !collectionName) return;
             if (currentUserData.sparkBalance < 1) {
                 showToast("❌ You're out of Sparks! Claim your daily bonus.");
                 return;
             }
             
-            // Disable button to prevent double-tipping
             tipButton.disabled = true;
 
             const userDocRef = doc(db, "users", currentUserId);
-            const postDocRef = doc(postsColRef, postId); // <-- Use postsColRef
+            // Use the correct collection based on the parameter
+            const contentDocRef = doc(db, collectionName, docId); 
 
             try {
-                // Use a batch write to ensure both updates succeed or fail together
                 const batch = writeBatch(db);
-                
-                // 1. Decrease user's balance
-                batch.update(userDocRef, {
-                    sparkBalance: increment(-1)
-                });
-
-                // 2. Increase post's balance
-                batch.update(postDocRef, {
-                    sparkCount: increment(1)
-                });
-                
+                batch.update(userDocRef, { sparkBalance: increment(-1) });
+                batch.update(contentDocRef, { sparkCount: increment(1) });
                 await batch.commit();
+                
                 showToast("✨ You tipped 1 Spark!");
 
-                // Curation bonus logic (mockup)
-                // In a real app, this would be a complex check
-                const postSnap = await getDoc(postDocRef);
+                // Curation bonus logic
+                const postSnap = await getDoc(contentDocRef);
                 const newSparkCount = postSnap.data().sparkCount;
                 if (newSparkCount === 10) {
                      await updateDoc(userDocRef, { sparkBalance: increment(20) });
@@ -587,22 +593,19 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
                 console.error("Error tipping post: ", error);
                 showToast("Error tipping. Please try again.");
             } finally {
-                // Re-enable button after 1 second to prevent spam
-                setTimeout(() => {
-                    if (tipButton) { // Check if button still exists
-                        tipButton.disabled = false;
-                    }
-                }, 1000);
+                setTimeout(() => { if (tipButton) tipButton.disabled = false; }, 1000);
             }
         }
 
-        // Handle Create Post
+        // Handle Create Post (NOW DYNAMIC)
         createPostForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUserId || !postsColRef) return;
+            if (!currentUserId) return;
 
             const title = document.getElementById('post-title').value;
             const thumbnailUrl = document.getElementById('post-thumbnail').value;
+            // Get the selected post type
+            const postType = document.querySelector('input[name="postType"]:checked').value;
 
             if (!title || !thumbnailUrl) {
                 showToast("Please fill out all fields.");
@@ -612,33 +615,45 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
             uploadBtn.disabled = true;
             uploadBtn.textContent = "Uploading...";
 
+            // Determine which collection to save to
+            const targetColRef = (postType === 'video') ? postsColRef : reelsColRef;
+            
             try {
-                // Use a batch to add post AND update user's post count
                 const batch = writeBatch(db);
 
-                // 1. Create the new post
-                batch.set(doc(postsColRef), { // <-- Use postsColRef
+                // 1. Create the new post/reel
+                const newContentData = {
                     title: title,
                     thumbnailUrl: thumbnailUrl,
                     creatorId: currentUserId,
                     creatorUsername: currentUserData.username || "AnonymousUser",
                     sparkCount: 0,
                     createdAt: serverTimestamp()
-                });
+                };
+                
+                // Add reel-specific fields if it's a reel
+                if (postType === 'reel') {
+                    newContentData.likeCount = 0;
+                    newContentData.commentCount = 0;
+                }
+                
+                batch.set(doc(targetColRef), newContentData);
 
                 // 2. Update the user's post count
                 const userDocRef = doc(db, "users", currentUserId);
-                batch.update(userDocRef, {
-                    postCount: increment(1)
-                });
+                batch.update(userDocRef, { postCount: increment(1) });
                 
                 await batch.commit();
 
-                showToast("✅ Video Uploaded!");
+                showToast("✅ Content Uploaded!");
                 createPostForm.reset();
                 
-                // Switch back to home page to see the new post
-                document.getElementById('nav-home').click();
+                // Switch to the correct page to see the new post
+                if (postType === 'video') {
+                    document.getElementById('nav-home').click();
+                } else {
+                    document.getElementById('nav-reels').click();
+                }
 
             } catch (error) {
                 console.error("Error uploading post: ", error);
@@ -655,9 +670,7 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
         const pages = document.querySelectorAll('.page-content');
         const mainHeader = document.getElementById('main-header');
         const bodyEl = document.body;
-        // Fix for nav-account button ID
-        const navAccountButton = document.querySelector('a[data-page="account-page"]');
-
+        const navAccountButton = document.querySelector('a[data-page="account-page"]'); // Fixed selector
 
         navButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -683,7 +696,6 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
                     console.error('Page not found:', targetPageId);
                 }
 
-
                 navButtons.forEach(btn => {
                     btn.classList.remove('text-indigo-600', 'font-medium');
                     btn.classList.add('text-gray-500');
@@ -695,7 +707,6 @@ Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` y
             });
         });
         
-        // Also link desktop create button
         document.getElementById('desktop-create-btn').addEventListener('click', () => {
              document.getElementById('nav-create').click();
         });
