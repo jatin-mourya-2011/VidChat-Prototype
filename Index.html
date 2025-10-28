@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidChat - Real-Time App</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load icon library -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal { transition: opacity 0.25s ease; }
+        .modal-content { transition: transform 0.25s ease; }
+        #toast {
+            visibility: hidden; min-width: 250px; margin-left: -125px;
+            background-color: #333; color: #fff; text-align: center;
+            border-radius: 8px; padding: 16px; position: fixed;
+            z-index: 100; left: 50%; bottom: 30px; opacity: 0;
+            transition: visibility 0.5s, opacity 0.5s linear;
+        }
+        #toast.show { visibility: visible; opacity: 1; }
+        .reels-active { overflow: hidden; }
+        #reels-page.reels-active {
+            height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory;
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+        #reels-page.reels-active::-webkit-scrollbar { display: none; }
+        #reels-page .reel-item {
+            height: 100vh; width: 100%; scroll-snap-align: start; flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header id="main-header" class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto max-w-4xl px-4 py-3 flex justify-between items-center">
+            <div class="text-2xl font-bold text-indigo-600">
+                Vid<span class="text-red-500">Chat</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="desktop-create-btn" class="text-gray-600 hover:text-indigo-600 text-2xl hidden md:block">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button id="how-to-earn-btn" class="text-gray-600 hover:text-indigo-600 font-medium hidden md:flex">
+                    <i class="fas fa-question-circle mr-1"></i>
+                    How to Earn
+                </button>
+                <div id="wallet" class="bg-yellow-100 text-yellow-800 font-bold px-4 py-2 rounded-full shadow-inner">
+                    ✨ <span id="spark-balance">...</span> Sparks
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Home Page -->
+    <main id="home-page" class="page-content container mx-auto max-w-6xl p-4 mt-6 pb-24">
+        
+        <!-- Daily Reward Banner -->
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-5 rounded-lg shadow-lg mb-6 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-bold">Welcome Back!</h2>
+                <p id="bonus-subtitle" class="text-indigo-100">Claim your daily engagement bonus.</p>
+            </div>
+            <button id="claim-bonus-btn" class="bg-white text-indigo-600 font-bold px-5 py-2 rounded-full shadow-md hover:bg-gray-100 transition duration-300">
+                Claim 10 ✨
+            </button>
+        </div>
+
+        <!-- Social Feed Section -->
+        <!-- This is now a container that Firebase will fill -->
+        <div id="video-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Loading Message -->
+            <p id="loading-posts" class="text-gray-600 text-center col-span-3">Loading videos...</p>
+            <!-- Videos will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <!-- Create Page -->
+    <main id="create-page" class="page-content container mx-auto max-w-lg p-4 mt-6 pb-24 hidden">
+        <!-- We wrap this in a form for easy submission -->
+        <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Create New Video Post</h2>
+            <div class="border-4 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center">
+                <i class="fas fa-cloud-upload-alt text-7xl text-indigo-400"></i>
+                <p class="text-gray-600 mt-4 mb-6">Drag & drop your video here</p>
+                <button type="button" class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-full shadow-md hover:bg-indigo-700 transition duration-300">
+                    Select File
+                </button>
+                <p class="text-sm text-gray-500 mt-2">(Prototype: Just fill the fields below)</p>
+            </div>
+            <input id="post-title" class="w-full border border-gray-300 rounded-lg p-3 mt-6 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Video Title..." required />
+            <input id="post-thumbnail" class="w-full border border-gray-300 rounded-lg p-3 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Thumbnail URL (e.g., https://placehold.co/...)" required />
+            
+            <button type="submit" id="upload-btn" class="bg-red-500 text-white font-bold px-8 py-3 rounded-full shadow-md hover:bg-red-600 transition duration-300 mt-4 w-full">
+                Upload
+            </button>
+        </form>
+    </main>
+    
+    <!-- Reels Page (Placeholder) -->
+    <main id="reels-page" class="page-content hidden">
+        <div class="reel-item bg-black relative w-full overflow-hidden">
+            <img src="https://placehold.co/400x700/000000/ffffff?text=Reel+1" class="w-full h-full object-cover">
+            <div class="absolute bottom-20 left-0 p-4 text-white"><p class="font-bold">@CreatorAlice</p><p class="text-sm">This is my first VidChat Reel! #fyp</p></div>
+            <div class="absolute bottom-20 right-2 flex flex-col space-y-4 text-white text-2xl">
+                <button class="flex flex-col items-center"><i class="fas fa-heart"></i><span class="text-sm">1.2k</span></button>
+                <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm">105</span></button>
+                <button class="flex flex-col items-center"><i class="fas fa-star"></i><span class="text-sm">88</span></button>
+                <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm">Share</span></button>
+            </div>
+        </div>
+        <div class="reel-item bg-black relative w-full overflow-hidden">
+            <img src="https://placehold.co/400x700/333333/ffffff?text=Reel+2" class="w-full h-full object-cover">
+            <div class="absolute bottom-20 left-0 p-4 text-white"><p class="font-bold">@CreatorCharlie</p><p class="text-sm">Travel goals! ✈️</p></div>
+            <div class="absolute bottom-20 right-2 flex flex-col space-y-4 text-white text-2xl">
+                <button class="flex flex-col items-center"><i class="fas fa-heart"></i><span class="text-sm">3.4k</span></button>
+                <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm">210</span></button>
+                <button class="flex flex-col items-center"><i class="fas fa-star"></i><span class="text-sm">150</span></button>
+                <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm">Share</span></button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chats Page (Placeholder) -->
+    <main id="chats-page" class="page-content container mx-auto max-w-xl p-0 mt-6 pb-24 hidden">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <h2 class="text-2xl font-bold text-gray-800 p-4 border-b">Chats</h2>
+            <div class="divide-y divide-gray-200">
+                <div class="p-4 flex items-center space-x-4 hover:bg-gray-50 cursor-pointer"><img src="https://placehold.co/50x50/93c5fd/333?text=A" alt="Avatar" class="w-12 h-12 rounded-full"><div class="flex-1"><h3 class="font-bold text-gray-800">Creator Alice</h3><p class="text-sm text-gray-600">Awesome! Thanks for the tip!</p></div><span class="text-xs text-gray-500">10m ago</span></div>
+                <div class="p-4 flex items-center space-x-4 hover:bg-gray-50 cursor-pointer"><img src="https://placehold.co/50x50/86efac/333?text=C" alt="Avatar" class="w-12 h-12 rounded-full"><div class="flex-1"><h3 class="font-bold text-gray-800">Creator Charlie</h3><p class="text-sm text-gray-600">You're welcome!</p></div><span class="text-xs text-gray-500">1h ago</span></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Account Page (Placeholder) -->
+    <main id="account-page" class="page-content container mx-auto max-w-xl p-4 mt-6 pb-24 hidden">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col items-center">
+                <img src="https://placehold.co/100x100/fca5a5/333?text=U" alt="Your Avatar" class="w-24 h-24 rounded-full shadow-lg">
+                <h2 id="account-username" class="text-2xl font-bold text-gray-800 mt-4">User (You)</h2>
+                <p id="account-userid" class="text-gray-600 text-sm">Loading user...</p>
+                <div id="wallet-profile" class="bg-yellow-100 text-yellow-800 font-bold px-4 py-2 rounded-full shadow-inner mt-4">
+                    ✨ <span id="spark-balance-profile">...</span> Sparks
+                </div>
+            </div>
+            <div class="flex justify-around text-center my-6 border-y py-4">
+                <div><p class="text-2xl font-bold">12</p><p class="text-gray-500 text-sm">Following</p></div>
+                <div><p class="text-2xl font-bold">5</p><p class="text-gray-500 text-sm">Followers</p></div>
+                <div><p class="text-2xl font-bold">0</p><p id="user-post-count" class="text-gray-500 text-sm">Posts</p></div>
+            </div>
+            <div class="space-y-2">
+                <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200"><span class="font-medium"><i class="fas fa-wallet mr-2"></i> My Wallet</span><i class="fas fa-chevron-right text-gray-500"></i></a>
+                <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200"><span class="font-medium"><i class="fas fa-cog mr-2"></i> Settings</span><i class="fas fa-chevron-right text-gray-500"></i></a>
+                <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 text-red-600"><span class="font-medium"><i class="fas fa-sign-out-alt mr-2"></i> Log Out</span><i class="fas fa-chevron-right"></i></a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile Only) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.06)] border-t border-gray-200">
+        <div class="flex justify-around items-center h-16">
+            <a href="#" id="nav-create" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="create-page"><i class="fas fa-plus-square text-xl"></i><span class="text-xs mt-1">Create</span></a>
+            <a href="#" id="nav-reels" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="reels-page"><i class="fas fa-film text-xl"></i><span class="text-xs mt-1">Reels</span></a>
+            <a href="#" id="nav-home" class="nav-button flex flex-col items-center justify-center text-indigo-600 font-medium w-1/5" data-page="home-page"><i class="fas fa-home text-xl"></i><span class="text-xs mt-1">Home</span></a>
+            <a href="#" id="nav-chats" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="chats-page"><i class="fas fa-comments text-xl"></i><span class="text-xs mt-1">Chats</span></a>
+            <a href="#" id="nav-account" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="account-page"><i class="fas fa-user-circle text-xl"></i><span class="text-xs mt-1">Account</span></a>
+        </div>
+    </nav>
+    
+    <!-- "How to Earn" Modal -->
+    <div id="earn-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg p-6 m-4 transform -translate-y-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">How to Earn Sparks ✨</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="space-y-6">
+                <div><h3 class="text-lg font-semibold text-indigo-600 mb-2">💰 For Users (You!)</h3><ul class="list-disc list-inside space-y-2 text-gray-700"><li><strong>Daily Login Bonus:</strong> Get free Sparks just for visiting each day.</li><li><strong>Engage-to-Earn:</strong> Tip creators to reward good content.</li><li><strong>Curation Bonus:</strong> Tip a video *before* it gets popular to earn a large Spark bonus.</li><li><strong>Watch Ads:</strong> Watch short sponsored ads to earn extra Sparks.</li></ul></div>
+                <div><h3 class="text-lg font-semibold text-yellow-600 mb-2">🎨 For Creators</h3><ul class="list-disc list-inside space-y-2 text-gray-700"><li><strong>Creator Pool:</strong> A percentage of all app revenue (from ads and Spark sales) goes into a "Daily Creator Pool." This pool is distributed to the top-performing *videos* each day.</li></ul></div>
+                <div><h3 class="text-lg font-semibold text-gray-700 mb-2">What can I do with Sparks?</h3><p class="text-gray-700">Accumulate Sparks and cash them out for real money (e.g., 10,000 ✨ = $10) or spend them on exclusive digital items.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"></div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            updateDoc, 
+            collection, 
+            onSnapshot,
+            addDoc,
+            writeBatch,
+            increment,
+            serverTimestamp,
+            query,
+            limit,
+            getDocs // Added getDocs for checking if empty
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL STATE ---
+        let db, auth;
+        let currentUserId = null;
+        let currentUserData = {};
+        let postsColRef; // <-- Declare postsColRef here
+        
+        // --- UI ELEMENTS ---
+        const sparkBalanceEl = document.getElementById('spark-balance');
+        const sparkBalanceProfileEl = document.getElementById('spark-balance-profile');
+        const toastEl = document.getElementById('toast');
+        const modal = document.getElementById('earn-modal');
+        const openModalBtn = document.getElementById('how-to-earn-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const claimBonusBtn = document.getElementById('claim-bonus-btn');
+        const bonusSubtitle = document.getElementById('bonus-subtitle');
+        const videoGridContainer = document.getElementById('video-grid-container');
+        const loadingPostsEl = document.getElementById('loading-posts');
+        const createPostForm = document.getElementById('create-post-form');
+        const uploadBtn = document.getElementById('upload-btn');
+        const accountUserIdEl = document.getElementById('account-userid');
+        const userPostCountEl = document.getElementById('user-post-count'); // For Account page
+
+        // --- FIREBASE CONFIG (Mandatory) ---
+        // This `appId` is for the artifact system, not Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // *** THIS IS YOUR LIVE CONFIGURATION ***
+        // This is the fallback config for local testing (e.g., in VS Code)
+        const userProvidedConfig = {
+          apiKey: "AIzaSyDa1qEbObnYVIpMvXoF8afXBvcG-DhR_uY",
+          authDomain: "vidchat-2011.firebaseapp.com",
+          projectId: "vidchat-2011",
+          storageBucket: "vidchat-2011.firebasestorage.app",
+          messagingSenderId: "1091989305105",
+          appId: "1:1091989305105:web:f6da79a45105151b0dfeb0",
+          measurementId: "G-SM1VE2SE0B"
+        };
+        
+        // --- FIX ---
+        // Prioritize the Canvas environment's config if it exists.
+        // This ensures the auth token (initialAuthToken) matches the config.
+        // Fall back to your config for local testing.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config !== '{}'
+            ? JSON.parse(__firebase_config) 
+            : userProvidedConfig;
+        // *** END OF FIX ***
+        
+        // This is for the artifact system's auth
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+
+        // --- TOAST FUNCTION ---
+        function showToast(message) {
+            toastEl.textContent = message;
+            toastEl.className = "show";
+            setTimeout(() => { 
+                toastEl.className = toastEl.className.replace("show", ""); 
+            }, 3000);
+        }
+
+        // --- FIREBASE INITIALIZATION ---
+        async function initializeFirebase() {
+            try {
+                // Initialize Firebase with YOUR config
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // --- FIX: Initialize postsColRef AFTER db is initialized ---
+                postsColRef = collection(db, "posts");
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        accountUserIdEl.textContent = `User ID: ${currentUserId.substring(0, 8)}...`;
+                        
+                        // User is signed in, now get/create their data
+                        // NOTE: Using 'public/data' for posts and 'users' for private data
+                        // This matches the common security rules structure.
+                        await setupUserDocument(currentUserId);
+                        
+                        // Start listening for user data changes (e.g., spark balance)
+                        listenToUserDocument(currentUserId);
+                        
+                        // Start listening for posts
+                        listenToPosts();
+
+                    } else {
+                        // User is signed out.
+                        currentUserId = null;
+                        currentUserData = {};
+                        updateSparkBalance(0); // Reset UI
+                        accountUserIdEl.textContent = "Not logged in.";
+                    }
+                });
+
+                // Sign in. If we are in the artifact environment, use its token.
+                // Otherwise, sign in anonymously (for local VS Code testing)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+            } catch (error) S{
+                console.error("Firebase Init Error:", error);
+                showToast("Error connecting to app services.");
+            }
+        }
+
+        // --- USER DATA FUNCTIONS ---
+        // Using a path that works well with standard "test mode" rules
+        async function setupUserDocument(userId) {
+            const userDocRef = doc(db, "users", userId); 
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+                // New user, create their document
+                await setDoc(userDocRef, {
+                    uid: userId,
+                    username: "AnonymousUser",
+                    sparkBalance: 100, // Welcome bonus
+                    lastBonusClaim: null,
+                    postCount: 0
+                });
+                showToast("Welcome! You've received 100 Sparks! ✨");
+            }
+        }
+
+        function listenToUserDocument(userId) {
+            const userDocRef = doc(db, "users", userId);
+            onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    updateSparkBalance(currentUserData.sparkBalance);
+                    checkBonusButtonState(currentUserData.lastBonusClaim);
+                    document.getElementById('account-username').textContent = currentUserData.username;
+                    userPostCountEl.textContent = currentUserData.postCount || 0;
+                }
+            });
+        }
+
+        function updateSparkBalance(balance) {
+            sparkBalanceEl.textContent = balance;
+            sparkBalanceProfileEl.textContent = balance;
+        }
+
+        function checkBonusButtonState(lastClaimTimestamp) {
+            if (lastClaimTimestamp) {
+                const lastClaimDate = lastClaimTimestamp.toDate().toDateString();
+                const todayDate = new Date().toDateString();
+
+                if (lastClaimDate === todayDate) {
+                    claimBonusBtn.disabled = true;
+                    bonusSubtitle.textContent = "You've claimed your bonus for today.";
+                    claimBonusBtn.textContent = "Claimed";
+                    claimBonusBtn.classList.remove('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
+                    claimBonusBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                } else {
+                    // It's a new day, re-enable the button
+                    claimBonusBtn.disabled = false;
+                    bonusSubtitle.textContent = "Claim your daily engagement bonus.";
+                    claimBonusBtn.textContent = "Claim 10 ✨";
+                    claimBonusBtn.classList.add('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
+                    claimBonusBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                }
+            } else {
+                 // Never claimed, enable button
+                claimBonusBtn.disabled = false;
+                bonusSubtitle.textContent = "Claim your daily engagement bonus.";
+                claimBonusBtn.textContent = "Claim 10 ✨";
+            }
+        }
+
+        // --- POST/VIDEO DATA FUNCTIONS ---
+        // Using a simple 'posts' collection for "test mode"
+        // const postsColRef = collection(db, "posts"); // <-- This was the bug. It's moved.
+
+        // NEW: Function to add starter videos if DB is empty
+        async function populateStarterVideos() {
+            if (!postsColRef) return; // Guard clause in case db init failed
+            const q = query(postsColRef, limit(1));
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                console.log("Database is empty. Adding starter videos...");
+                const batch = writeBatch(db);
+
+                const starterVideos = [
+                    {
+                        title: "Welcome to VidChat!",
+                        thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!",
+                        creatorUsername: "VidChat Team",
+                        creatorId: "system",
+                        sparkCount: 25,
+                        createdAt: serverTimestamp()
+                    },
+                    {
+                        title: "My First Short Film",
+                        thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film",
+                        creatorUsername: "CreatorAlice",
+                        creatorId: "alice123",
+                        sparkCount: 10,
+                        createdAt: serverTimestamp()
+                    },
+                    {
+                        title: "How to Earn Sparks",
+                        thumbnailUrl: "https://placehold.co/600x400/f59e0b/ffffff?text=Earn+✨",
+                        creatorUsername: "VidChat Team",
+                        creatorId: "system",
+                        sparkCount: 42,
+                        createdAt: serverTimestamp()
+                    }
+                ];
+
+                starterVideos.forEach(video => {
+                    const newPostRef = doc(postsColRef); // Use the initialized postsColRef
+                    batch.set(newPostRef, video);
+                });
+
+                await batch.commit();
+            } else {
+                console.log("Database already has videos. Skipping population.");
+            }
+        }
+
+        function listenToPosts() {
+            if (!postsColRef) return; // Guard clause
+            // First, check if we need to add starter videos
+            populateStarterVideos().then(() => {
+                // After check, start listening for real-time updates
+                const q = query(postsColRef); // Can add orderBy('createdAt', 'desc') here
+
+                onSnapshot(q, (querySnapshot) => {
+                    videoGridContainer.innerHTML = ''; // Clear existing posts
+                    
+                    if (querySnapshot.empty) {
+                        loadingPostsEl.textContent = "No videos posted yet. Be the first!";
+                        videoGridContainer.appendChild(loadingPostsEl);
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const post = doc.data();
+                        const postId = doc.id;
+                        createPostElement(postId, post);
+                    });
+                }, (error) => {
+                    console.error("Error listening to posts:", error);
+                    loadingPostsEl.textContent = "Error loading videos.";
+                });
+            });
+        }
+
+        function createPostElement(postId, post) {
+            const article = document.createElement('article');
+            article.className = "bg-white rounded-lg shadow-md overflow-hidden post";
+            article.dataset.postId = postId; // Store Firestore ID
+
+            // Handle potential null or invalid timestamp
+            let timestamp = "Just now";
+            if (post.createdAt && post.createdAt.toDate) {
+                const date = post.createdAt.toDate();
+                // Simple time ago logic
+                const seconds = Math.floor((new Date() - date) / 1000);
+                if (seconds > 3600) timestamp = `${Math.floor(seconds / 3600)}h ago`;
+                else if (seconds > 60) timestamp = `${Math.floor(seconds / 60)}m ago`;
+                else if (seconds > 0) timestamp = `${seconds}s ago`;
+            }
+
+            article.innerHTML = `
+                <img src="${post.thumbnailUrl}" alt="Video thumbnail" class="rounded-t-lg w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/ef4444/ffffff?text=Image+Error'">
+                <div class="p-4">
+                    <div class="flex space-x-3">
+                        <img src="https://placehold.co/40x40/93c5fd/333?text=${post.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full mt-1">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-800 text-lg">${post.title}</h3>
+                            <p class="text-sm text-gray-600">${post.creatorUsername}</p>
+                            <p class="text-sm text-gray-500">${timestamp}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <button class="tip-button text-indigo-600 hover:text-indigo-800 font-semibold py-2 px-4 rounded-full bg-indigo-100 hover:bg-indigo-200 transition">
+                            <i class="fas fa-star mr-1"></i> Tip 1 ✨
+                        </button>
+                        <div class="text-lg font-bold text-yellow-600">
+                            <span class="spark-total">${post.sparkCount || 0}</span> ✨
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add tip button event listener
+            const tipButton = article.querySelector('.tip-button');
+            tipButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent other clicks
+                handleTip(postId, tipButton);
+            });
+            
+            videoGridContainer.prepend(article); // Use prepend to show newest first
+        }
+
+        // --- EVENT HANDLERS ---
+
+        // Handle Daily Bonus Claim
+        claimBonusBtn.addEventListener('click', async () => {
+            if (!currentUserId) return;
+
+            claimBonusBtn.disabled = true; // Disable to prevent double-click
+            const userDocRef = doc(db, "users", currentUserId);
+
+            try {
+                await updateDoc(userDocRef, {
+                    sparkBalance: increment(10),
+                    lastBonusClaim: serverTimestamp() // Use server time
+                });
+                showToast("🎁 10 Sparks claimed!");
+            } catch (error) {
+                console.error("Error claiming bonus: ", error);
+                showToast("Error claiming bonus. Try again.");
+                claimBonusBtn.disabled = false; // Re-enable on error
+            }
+        });
+
+        // Handle Tipping
+        async function handleTip(postId, tipButton) {
+            if (!currentUserId) return;
+            if (currentUserData.sparkBalance < 1) {
+                showToast("❌ You're out of Sparks! Claim your daily bonus.");
+                return;
+            }
+            
+            // Disable button to prevent double-tipping
+            tipButton.disabled = true;
+
+            const userDocRef = doc(db, "users", currentUserId);
+            const postDocRef = doc(postsColRef, postId); // <-- Use postsColRef
+
+            try {
+                // Use a batch write to ensure both updates succeed or fail together
+                const batch = writeBatch(db);
+                
+                // 1. Decrease user's balance
+                batch.update(userDocRef, {
+                    sparkBalance: increment(-1)
+                });
+
+                // 2. Increase post's balance
+                batch.update(postDocRef, {
+                    sparkCount: increment(1)
+                });
+                
+                await batch.commit();
+                showToast("✨ You tipped 1 Spark!");
+
+                // Curation bonus logic (mockup)
+                // In a real app, this would be a complex check
+                const postSnap = await getDoc(postDocRef);
+                const newSparkCount = postSnap.data().sparkCount;
+                if (newSparkCount === 10) {
+                     await updateDoc(userDocRef, { sparkBalance: increment(20) });
+                     showToast("🎉 Curation Bonus! +20 Sparks");
+                }
+
+            } catch (error) {
+                console.error("Error tipping post: ", error);
+                showToast("Error tipping. Please try again.");
+            } finally {
+                // Re-enable button after 1 second to prevent spam
+                setTimeout(() => {
+                    if (tipButton) { // Check if button still exists
+                        tipButton.disabled = false;
+                    }
+                }, 1000);
+            }
+        }
+
+        // Handle Create Post
+        createPostForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUserId || !postsColRef) return;
+
+            const title = document.getElementById('post-title').value;
+            const thumbnailUrl = document.getElementById('post-thumbnail').value;
+
+            if (!title || !thumbnailUrl) {
+                showToast("Please fill out all fields.");
+                return;
+            }
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = "Uploading...";
+
+            try {
+                // Use a batch to add post AND update user's post count
+                const batch = writeBatch(db);
+
+                // 1. Create the new post
+                batch.set(doc(postsColRef), { // <-- Use postsColRef
+                    title: title,
+                    thumbnailUrl: thumbnailUrl,
+                    creatorId: currentUserId,
+                    creatorUsername: currentUserData.username || "AnonymousUser",
+                    sparkCount: 0,
+                    createdAt: serverTimestamp()
+                });
+
+                // 2. Update the user's post count
+                const userDocRef = doc(db, "users", currentUserId);
+                batch.update(userDocRef, {
+                    postCount: increment(1)
+                });
+                
+                await batch.commit();
+
+                showToast("✅ Video Uploaded!");
+                createPostForm.reset();
+                
+                // Switch back to home page to see the new post
+                document.getElementById('nav-home').click();
+
+            } catch (error) {
+                console.error("Error uploading post: ", error);
+                showToast("Upload failed. Please try again.");
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = "Upload";
+            }
+        });
+
+
+        // --- PAGE NAVIGATION (Simplified) ---
+        const navButtons = document.querySelectorAll('.nav-button');
+        const pages = document.querySelectorAll('.page-content');
+        const mainHeader = document.getElementById('main-header');
+        const bodyEl = document.body;
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetPageId = button.dataset.page;
+                
+                // Handle Reels-specific layout
+                if (targetPageId === 'reels-page') {
+                    mainHeader.classList.add('hidden');
+                    bodyEl.classList.add('reels-active');
+                    document.getElementById('reels-page').classList.add('reels-active');
+                } else {
+                    mainHeader.classList.remove('hidden');
+                    bodyEl.classList.remove('reels-active');
+                    document.getElementById('reels-page').classList.remove('reels-active');
+                }
+
+                pages.forEach(page => page.classList.add('hidden'));
+                document.getElementById(targetPageId).classList.remove('hidden');
+
+                navButtons.forEach(btn => {
+                    btn.classList.remove('text-indigo-600', 'font-medium');
+                    btn.classList.add('text-gray-500');
+                });
+                button.classList.add('text-indigo-600', 'font-medium');
+                button.classList.remove('text-gray-500');
+
+                if (targetPageId !== 'reels-page') window.scrollTo(0, 0);
+            });
+        });
+        
+        // Also link desktop create button
+        document.getElementById('desktop-create-btn').addEventListener('click', () => {
+             document.getElementById('nav-create').click();
+        });
+
+        // --- MODAL (How to Earn) ---
+        openModalBtn.addEventListener('click', () => {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.remove('-translate-y-10');
+        });
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.modal-content').classList.add('-translate-y-10');
+        });
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModalBtn.click();
+        });
+
+        // --- START THE APP ---
+        initializeFirebase();
+
+    </script>
+</body>
+</html>
+
