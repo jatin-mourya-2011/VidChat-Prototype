@@ -53,6 +53,15 @@
             background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
             background-color: #4f46e5; /* indigo-600 */
         }
+        /* Style for liked (solid red) heart */
+        .liked .fa-heart {
+            font-weight: 900; /* 'fas' solid style */
+            color: #ef4444; /* red-500 */
+        }
+        /* Style for default (outline) heart */
+        .fa-heart {
+            font-weight: 400; /* 'far' regular style */
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -93,21 +102,16 @@
         </div>
 
         <!-- Social Feed Section -->
-        <!-- This is now a container that Firebase will fill -->
         <div id="video-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Loading Message -->
             <p id="loading-posts" class="text-gray-600 text-center col-span-3">Loading videos...</p>
-            <!-- Videos will be dynamically inserted here -->
         </div>
     </main>
 
     <!-- Create Page -->
     <main id="create-page" class="page-content container mx-auto max-w-lg p-4 mt-6 pb-24 hidden">
-        <!-- We wrap this in a form for easy submission -->
         <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8 text-center">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Create New Post</h2>
             
-            <!-- Upload Box -->
             <div class="border-4 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center">
                 <i class="fas fa-cloud-upload-alt text-7xl text-indigo-400"></i>
                 <p class="text-gray-600 mt-4 mb-6">Drag & drop your video here</p>
@@ -117,7 +121,6 @@
                 <p class="text-sm text-gray-500 mt-2">(Prototype: Just fill the fields below)</p>
             </div>
 
-            <!-- NEW: Post Type Toggle -->
             <div class="flex justify-center space-x-6 mt-6">
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" name="postType" value="video" class="form-radio h-4 w-4 text-indigo-600 border-gray-400 focus:ring-indigo-500" checked>
@@ -140,9 +143,7 @@
     
     <!-- Reels Page (Dynamic Container) -->
     <main id="reels-page" class="page-content hidden">
-        <!-- Loading Message -->
         <p id="loading-reels" class="text-white text-center text-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Loading reels...</p>
-        <!-- Reels will be dynamically inserted here -->
     </main>
 
     <!-- Chats Page (Placeholder) -->
@@ -156,22 +157,50 @@
         </div>
     </main>
 
-    <!-- Account Page (Placeholder) -->
+    <!-- Account Page (NOW DYNAMIC) -->
     <main id="account-page" class="page-content container mx-auto max-w-xl p-4 mt-6 pb-24 hidden">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex flex-col items-center">
-                <img src="https://placehold.co/100x100/fca5a5/333?text=U" alt="Your Avatar" class="w-24 h-24 rounded-full shadow-lg">
-                <h2 id="account-username" class="text-2xl font-bold text-gray-800 mt-4">User (You)</h2>
-                <p id="account-userid" class="text-gray-600 text-sm">Loading user...</p>
-                <div id="wallet-profile" class="bg-yellow-100 text-yellow-800 font-bold px-4 py-2 rounded-full shadow-inner mt-4">
-                    ✨ <span id="spark-balance-profile">...</span> Sparks
+            <!-- Profile Info Section -->
+            <div id="profile-view" class="text-center">
+                <div class="flex flex-col items-center">
+                    <img id="profile-pic-img" src="https://placehold.co/100x100/fca5a5/333?text=U" alt="Your Avatar" class="w-24 h-24 rounded-full shadow-lg">
+                    <h2 id="account-username" class="text-2xl font-bold text-gray-800 mt-4">User (You)</h2>
+                    <p id="account-bio" class="text-gray-600 mt-1 max-w-md">This is your bio! Click "Edit Profile" to change it.</p>
+                    <p id="account-userid" class="text-gray-600 text-sm mt-2">Loading user...</p>
+                    <div id="wallet-profile" class="bg-yellow-100 text-yellow-800 font-bold px-4 py-2 rounded-full shadow-inner mt-4">
+                        ✨ <span id="spark-balance-profile">...</span> Sparks
+                    </div>
                 </div>
+                <button id="edit-profile-btn" class="mt-4 bg-indigo-600 text-white font-bold px-5 py-2 rounded-full shadow-md hover:bg-indigo-700 transition duration-300">
+                    Edit Profile
+                </button>
             </div>
+
+            <!-- Profile Edit Section (Hidden by default) -->
+            <form id="profile-edit-view" class="hidden text-center">
+                <div class="flex flex-col items-center">
+                    <img id="profile-edit-pic-img" src="https://placehold.co/100x100/fca5a5/333?text=U" alt="Your Avatar" class="w-24 h-24 rounded-full shadow-lg">
+                    <input id="profile-pic-url-input" class="w-full border border-gray-300 rounded-lg p-2 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Profile Picture URL..." />
+                    <input id="username-input" class="w-full text-2xl font-bold text-center border border-gray-300 rounded-lg p-2 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Your Username..." />
+                    <textarea id="bio-input" class="w-full text-center border border-gray-300 rounded-lg p-2 mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3" placeholder="Your Bio..."></textarea>
+                </div>
+                <div class="flex space-x-4 justify-center mt-4">
+                    <button id="cancel-edit-btn" type="button" class="bg-gray-200 text-gray-800 font-bold px-5 py-2 rounded-full shadow-md hover:bg-gray-300 transition duration-300">
+                        Cancel
+                    </button>
+                    <button id="save-profile-btn" type="submit" class="bg-green-500 text-white font-bold px-5 py-2 rounded-full shadow-md hover:bg-green-600 transition duration-300">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+
+            <!-- Stats (Followers still placeholder) -->
             <div class="flex justify-around text-center my-6 border-y py-4">
                 <div><p class="text-2xl font-bold">12</p><p class="text-gray-500 text-sm">Following</p></div>
                 <div><p class="text-2xl font-bold">5</p><p class="text-gray-500 text-sm">Followers</p></div>
-                <div><p class="text-2xl font-bold">0</p><p id="user-post-count" class="text-gray-500 text-sm">Posts</p></div>
+                <div><p id="user-post-count-display" class="text-2xl font-bold">0</p><p class="text-gray-500 text-sm">Posts</p></div>
             </div>
+            <!-- Links (Still placeholder) -->
             <div class="space-y-2">
                 <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200"><span class="font-medium"><i class="fas fa-wallet mr-2"></i> My Wallet</span><i class="fas fa-chevron-right text-gray-500"></i></a>
                 <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200"><span class="font-medium"><i class="fas fa-cog mr-2"></i> Settings</span><i class="fas fa-chevron-right text-gray-500"></i></a>
@@ -233,7 +262,9 @@
             serverTimestamp,
             query,
             limit,
-            getDocs // Added getDocs for checking if empty
+            getDocs,
+            arrayUnion,    // NEW: For 'like' system
+            arrayRemove    // NEW: For 'unlike' system
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- GLOBAL STATE ---
@@ -241,7 +272,7 @@
         let currentUserId = null;
         let currentUserData = {};
         let postsColRef;
-        let reelsColRef; // NEW: Collection for Reels
+        let reelsColRef;
         
         // --- UI ELEMENTS ---
         const sparkBalanceEl = document.getElementById('spark-balance');
@@ -254,12 +285,27 @@
         const bonusSubtitle = document.getElementById('bonus-subtitle');
         const videoGridContainer = document.getElementById('video-grid-container');
         const loadingPostsEl = document.getElementById('loading-posts');
-        const reelsPageContainer = document.getElementById('reels-page'); // NEW: Reels container
-        const loadingReelsEl = document.getElementById('loading-reels'); // NEW: Reels loading
+        const reelsPageContainer = document.getElementById('reels-page');
+        const loadingReelsEl = document.getElementById('loading-reels');
         const createPostForm = document.getElementById('create-post-form');
         const uploadBtn = document.getElementById('upload-btn');
+        
+        // --- Account Page UI ---
         const accountUserIdEl = document.getElementById('account-userid');
-        const userPostCountEl = document.getElementById('user-post-count'); // For Account page
+        const userPostCountDisplayEl = document.getElementById('user-post-count-display');
+        const accountUsernameEl = document.getElementById('account-username');
+        const accountBioEl = document.getElementById('account-bio');
+        const profilePicImgEl = document.getElementById('profile-pic-img');
+        const profileViewEl = document.getElementById('profile-view');
+        const profileEditViewEl = document.getElementById('profile-edit-view');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const usernameInput = document.getElementById('username-input');
+        const bioInput = document.getElementById('bio-input');
+        const profilePicUrlInput = document.getElementById('profile-pic-url-input');
+        const profileEditPicImgEl = document.getElementById('profile-edit-pic-img');
+
 
         // --- FIREBASE CONFIG (Mandatory) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -294,9 +340,8 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Initialize collection references
                 postsColRef = collection(db, "posts");
-                reelsColRef = collection(db, "reels"); // NEW
+                reelsColRef = collection(db, "reels");
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -306,9 +351,8 @@
                         await setupUserDocument(currentUserId);
                         listenToUserDocument(currentUserId);
                         
-                        // Start listening to both collections
                         listenToPosts();
-                        listenToReels(); // NEW
+                        listenToReels();
 
                     } else {
                         currentUserId = null;
@@ -338,9 +382,12 @@
                 await setDoc(userDocRef, {
                     uid: userId,
                     username: "AnonymousUser",
+                    bio: "Welcome to VidChat!", // NEW
+                    profilePicUrl: `https://placehold.co/100x100/fca5a5/333?text=${"A".charAt(0).toUpperCase()}`, // NEW
                     sparkBalance: 100,
                     lastBonusClaim: null,
-                    postCount: 0
+                    postCount: 0,
+                    likedContent: [] // NEW: To track likes
                 });
                 showToast("Welcome! You've received 100 Sparks! ✨");
             }
@@ -351,10 +398,27 @@
             onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     currentUserData = docSnap.data();
+                    
+                    // Update all wallet balances
                     updateSparkBalance(currentUserData.sparkBalance);
+                    
+                    // Update bonus button
                     checkBonusButtonState(currentUserData.lastBonusClaim);
-                    document.getElementById('account-username').textContent = currentUserData.username;
-                    userPostCountEl.textContent = currentUserData.postCount || 0;
+                    
+                    // Update Account Page
+                    accountUsernameEl.textContent = currentUserData.username;
+                    accountBioEl.textContent = currentUserData.bio;
+                    userPostCountDisplayEl.textContent = currentUserData.postCount || 0;
+                    
+                    // Update profile picture
+                    const picUrl = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
+                    profilePicImgEl.src = picUrl;
+                    profileEditPicImgEl.src = picUrl;
+
+                    // Update inputs for edit form
+                    usernameInput.value = currentUserData.username;
+                    bioInput.value = currentUserData.bio;
+                    profilePicUrlInput.value = currentUserData.profilePicUrl;
                 }
             });
         }
@@ -397,9 +461,9 @@
                 console.log("Database 'posts' is empty. Adding starter videos...");
                 const batch = writeBatch(db);
                 const starterVideos = [
-                    { title: "Welcome to VidChat!", thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 25, createdAt: serverTimestamp() },
-                    { title: "My First Short Film", thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film", creatorUsername: "CreatorAlice", creatorId: "alice123", sparkCount: 10, createdAt: serverTimestamp() },
-                    { title: "How to Earn Sparks", thumbnailUrl: "https://placehold.co/600x400/f59e0b/ffffff?text=Earn+✨", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 42, createdAt: serverTimestamp() }
+                    { title: "Welcome to VidChat!", thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
+                    { title: "My First Short Film", thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film", creatorUsername: "CreatorAlice", creatorId: "alice123", sparkCount: 10, likeCount: 5, createdAt: serverTimestamp() },
+                    { title: "How to Earn Sparks", thumbnailUrl: "https://placehold.co/600x400/f59e0b/ffffff?text=Earn+✨", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 42, likeCount: 22, createdAt: serverTimestamp() }
                 ];
                 starterVideos.forEach(video => batch.set(doc(postsColRef), video));
                 await batch.commit();
@@ -439,38 +503,61 @@
                 else if (seconds > 0) timestamp = `${seconds}s ago`;
             }
 
+            // Check if user has liked this post
+            const isLiked = currentUserData.likedContent && currentUserData.likedContent.includes(postId);
+
             article.innerHTML = `
                 <img src="${post.thumbnailUrl}" alt="Video thumbnail" class="rounded-t-lg w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/ef4444/ffffff?text=Image+Error'">
                 <div class="p-4">
                     <div class="flex space-x-3">
-                        <img src="https://placehold.co/40x40/93c5fd/333?text=${post.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full mt-1">
+                        <img src="${post.creatorProfilePic || 'https://placehold.co/40x40/93c5fd/333?text=' + post.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full mt-1">
                         <div class="flex-1">
                             <h3 class="font-bold text-gray-800 text-lg">${post.title}</h3>
-                            <p class="text-sm text-gray-600">${post.creatorUsername}</p>
+                            <p class="text-sm text-gray-600">@${post.creatorUsername}</p>
                             <p class="text-sm text-gray-500">${timestamp}</p>
                         </div>
                     </div>
                     <div class="mt-4 flex justify-between items-center">
+                        <div class="flex space-x-4">
+                            <!-- NEW: Like button for home posts -->
+                            <button class="like-button text-gray-500 hover:text-red-500 transition ${isLiked ? 'liked' : ''}">
+                                <i class="fas fa-heart text-xl"></i>
+                                <span class="like-count text-sm ml-1">${post.likeCount || 0}</span>
+                            </button>
+                            <button class="text-gray-500 hover:text-indigo-600 transition">
+                                <i class="fas fa-comment text-xl"></i>
+                            </button>
+                        </div>
                         <button class="tip-button text-indigo-600 hover:text-indigo-800 font-semibold py-2 px-4 rounded-full bg-indigo-100 hover:bg-indigo-200 transition">
                             <i class="fas fa-star mr-1"></i> Tip 1 ✨
                         </button>
-                        <div class="text-lg font-bold text-yellow-600">
+                    </div>
+                    <div class="mt-2 flex justify-end">
+                         <div class="text-lg font-bold text-yellow-600">
                             <span class="spark-total">${post.sparkCount || 0}</span> ✨
                         </div>
                     </div>
                 </div>
             `;
             
+            // Add tip button event listener
             const tipButton = article.querySelector('.tip-button');
             tipButton.addEventListener('click', (e) => {
                 e.stopPropagation();
-                handleTip(postId, tipButton, 'posts'); // UPDATED: Pass collection name
+                handleTip(postId, 'posts');
+            });
+
+            // NEW: Add like button event listener
+            const likeButton = article.querySelector('.like-button');
+            likeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleLike(postId, 'posts', likeButton);
             });
             
             videoGridContainer.prepend(article);
         }
         
-        // --- NEW: REELS DATA FUNCTIONS (REELS PAGE) ---
+        // --- REELS DATA FUNCTIONS (REELS PAGE) ---
         async function populateStarterReels() {
             if (!reelsColRef) return;
             const q = query(reelsColRef, limit(1));
@@ -479,8 +566,8 @@
                 console.log("Database 'reels' is empty. Adding starter reels...");
                 const batch = writeBatch(db);
                 const starterReels = [
-                    { title: "My first VidChat Reel! #fyp", thumbnailUrl: "https://placehold.co/400x700/000000/ffffff?text=Reel+1", creatorUsername: "CreatorAlice", creatorId: "alice123", sparkCount: 88, likeCount: 1200, commentCount: 105, createdAt: serverTimestamp() },
-                    { title: "Travel goals! ✈️ #travel", thumbnailUrl: "https://placehold.co/400x700/333333/ffffff?text=Reel+2", creatorUsername: "CreatorCharlie", creatorId: "charlie456", sparkCount: 150, likeCount: 3400, commentCount: 210, createdAt: serverTimestamp() }
+                    { title: "My first VidChat Reel! #fyp", thumbnailUrl: "https://placehold.co/400x700/000000/ffffff?text=Reel+1", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 88, likeCount: 1200, commentCount: 105, createdAt: serverTimestamp() },
+                    { title: "Travel goals! ✈️ #travel", thumbnailUrl: "https://placehold.co/400x700/333333/ffffff?text=Reel+2", creatorUsername: "CreatorCharlie", creatorProfilePic: "https://placehold.co/40x40/86efac/333?text=C", creatorId: "charlie456", sparkCount: 150, likeCount: 3400, commentCount: 210, createdAt: serverTimestamp() }
                 ];
                 starterReels.forEach(reel => batch.set(doc(reelsColRef), reel));
                 await batch.commit();
@@ -490,7 +577,7 @@
         function listenToReels() {
             if (!reelsColRef) return;
             populateStarterReels().then(() => {
-                const q = query(reelsColRef); // Can add orderBy('createdAt', 'desc')
+                const q = query(reelsColRef);
                 onSnapshot(q, (querySnapshot) => {
                     reelsPageContainer.innerHTML = ''; // Clear
                     if (querySnapshot.empty) {
@@ -511,20 +598,37 @@
             div.className = "reel-item bg-black relative w-full overflow-hidden";
             div.dataset.reelId = reelId;
 
+            // Check if user has liked this reel
+            const isLiked = currentUserData.likedContent && currentUserData.likedContent.includes(reelId);
+
             div.innerHTML = `
                 <img src="${reel.thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x700/ef4444/ffffff?text=Image+Error'">
+                
+                <!-- Video content would go here -->
+                
                 <div class="absolute bottom-20 left-0 p-4 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-                    <p class="font-bold">@${reel.creatorUsername}</p>
-                    <p class="text-sm">${reel.title}</p>
+                    <div class="flex items-center space-x-2">
+                        <img src="${reel.creatorProfilePic || 'https://placehold.co/40x40/93c5fd/333?text=' + reel.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full border-2 border-white">
+                        <p class="font-bold">@${reel.creatorUsername}</p>
+                    </div>
+                    <p class="text-sm mt-2">${reel.title}</p>
                 </div>
+                
                 <div class="absolute bottom-20 right-2 flex flex-col space-y-5 text-white text-2xl" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-                    <button class="flex flex-col items-center"><i class="fas fa-heart"></i><span class="text-sm font-semibold">${reel.likeCount || 0}</span></button>
+                    <!-- DYNAMIC LIKE BUTTON -->
+                    <button class="like-button-reel flex flex-col items-center ${isLiked ? 'liked' : ''}">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-count text-sm font-semibold">${reel.likeCount || 0}</span>
+                    </button>
+                    
                     <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm font-semibold">${reel.commentCount || 0}</span></button>
-                    <!-- DYNAMIC TIP BUTTON FOR REELS -->
+                    
+                    <!-- DYNAMIC TIP BUTTON -->
                     <button class="tip-button-reel flex flex-col items-center text-yellow-300">
                         <i class="fas fa-star"></i>
                         <span class="spark-total text-sm font-semibold">${reel.sparkCount || 0}</span>
                     </button>
+                    
                     <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm font-semibold">Share</span></button>
                 </div>
             `;
@@ -533,7 +637,14 @@
             const tipButton = div.querySelector('.tip-button-reel');
             tipButton.addEventListener('click', (e) => {
                 e.stopPropagation();
-                handleTip(reelId, tipButton, 'reels'); // UPDATED: Pass collection name
+                handleTip(reelId, 'reels');
+            });
+            
+            // NEW: Add like button event listener
+            const likeButton = div.querySelector('.like-button-reel');
+            likeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleLike(reelId, 'reels', likeButton);
             });
 
             reelsPageContainer.appendChild(div);
@@ -559,18 +670,15 @@
             }
         });
 
-        // Handle Tipping (NOW DYNAMIC)
-        async function handleTip(docId, tipButton, collectionName) {
+        // Handle Tipping
+        async function handleTip(docId, collectionName) {
             if (!currentUserId || !collectionName) return;
             if (currentUserData.sparkBalance < 1) {
                 showToast("❌ You're out of Sparks! Claim your daily bonus.");
                 return;
             }
-            
-            tipButton.disabled = true;
 
             const userDocRef = doc(db, "users", currentUserId);
-            // Use the correct collection based on the parameter
             const contentDocRef = doc(db, collectionName, docId); 
 
             try {
@@ -580,8 +688,7 @@
                 await batch.commit();
                 
                 showToast("✨ You tipped 1 Spark!");
-
-                // Curation bonus logic
+                
                 const postSnap = await getDoc(contentDocRef);
                 const newSparkCount = postSnap.data().sparkCount;
                 if (newSparkCount === 10) {
@@ -591,20 +698,57 @@
 
             } catch (error) {
                 console.error("Error tipping post: ", error);
-                showToast("Error tipping. Please try again.");
-            } finally {
-                setTimeout(() => { if (tipButton) tipButton.disabled = false; }, 1000);
+            }
+        }
+        
+        // NEW: Handle Liking
+        async function handleLike(docId, collectionName, likeButton) {
+            if (!currentUserId) return;
+
+            const userDocRef = doc(db, "users", currentUserId);
+            const contentDocRef = doc(db, collectionName, docId);
+            const isCurrentlyLiked = currentUserData.likedContent && currentUserData.likedContent.includes(docId);
+
+            const likeCountEl = likeButton.querySelector('.like-count');
+            let currentLikeCount = parseInt(likeCountEl.textContent);
+
+            try {
+                const batch = writeBatch(db);
+                if (isCurrentlyLiked) {
+                    // --- Unlike ---
+                    batch.update(userDocRef, { likedContent: arrayRemove(docId) });
+                    batch.update(contentDocRef, { likeCount: increment(-1) });
+                    likeButton.classList.remove('liked');
+                    likeCountEl.textContent = currentLikeCount - 1;
+                } else {
+                    // --- Like ---
+                    batch.update(userDocRef, { likedContent: arrayUnion(docId) });
+                    batch.update(contentDocRef, { likeCount: increment(1) });
+                    likeButton.classList.add('liked');
+                    likeCountEl.textContent = currentLikeCount + 1;
+                }
+                await batch.commit();
+            } catch (error) {
+                console.error("Error liking content:", error);
+                showToast("Error liking. Please try again.");
+                // Revert UI on error
+                if (isCurrentlyLiked) {
+                    likeButton.classList.add('liked');
+                    likeCountEl.textContent = currentLikeCount;
+                } else {
+                    likeButton.classList.remove('liked');
+                    likeCountEl.textContent = currentLikeCount;
+                }
             }
         }
 
-        // Handle Create Post (NOW DYNAMIC)
+        // Handle Create Post
         createPostForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
 
             const title = document.getElementById('post-title').value;
             const thumbnailUrl = document.getElementById('post-thumbnail').value;
-            // Get the selected post type
             const postType = document.querySelector('input[name="postType"]:checked').value;
 
             if (!title || !thumbnailUrl) {
@@ -615,40 +759,36 @@
             uploadBtn.disabled = true;
             uploadBtn.textContent = "Uploading...";
 
-            // Determine which collection to save to
             const targetColRef = (postType === 'video') ? postsColRef : reelsColRef;
             
             try {
                 const batch = writeBatch(db);
 
-                // 1. Create the new post/reel
                 const newContentData = {
                     title: title,
                     thumbnailUrl: thumbnailUrl,
                     creatorId: currentUserId,
+                    // Use the current user's profile data
                     creatorUsername: currentUserData.username || "AnonymousUser",
+                    creatorProfilePic: currentUserData.profilePicUrl || `https://placehold.co/40x40/93c5fd/333?text=${currentUserData.username.charAt(0).toUpperCase()}`,
                     sparkCount: 0,
+                    likeCount: 0, // NEW: Start with 0 likes
                     createdAt: serverTimestamp()
                 };
                 
-                // Add reel-specific fields if it's a reel
                 if (postType === 'reel') {
-                    newContentData.likeCount = 0;
                     newContentData.commentCount = 0;
                 }
                 
                 batch.set(doc(targetColRef), newContentData);
 
-                // 2. Update the user's post count
                 const userDocRef = doc(db, "users", currentUserId);
                 batch.update(userDocRef, { postCount: increment(1) });
                 
                 await batch.commit();
-
                 showToast("✅ Content Uploaded!");
                 createPostForm.reset();
                 
-                // Switch to the correct page to see the new post
                 if (postType === 'video') {
                     document.getElementById('nav-home').click();
                 } else {
@@ -664,20 +804,74 @@
             }
         });
 
+        // --- NEW: Account Page Edit/Save Logic ---
+        editProfileBtn.addEventListener('click', () => {
+            profileViewEl.classList.add('hidden');
+            profileEditViewEl.classList.remove('hidden');
+        });
 
-        // --- PAGE NAVIGATION (Simplified) ---
+        cancelEditBtn.addEventListener('click', () => {
+            profileViewEl.classList.remove('hidden');
+            profileEditViewEl.classList.add('hidden');
+            
+            // Reset inputs to original values
+            usernameInput.value = currentUserData.username;
+            bioInput.value = currentUserData.bio;
+            profilePicUrlInput.value = currentUserData.profilePicUrl;
+            profileEditPicImgEl.src = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
+        });
+
+        saveProfileBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!currentUserId) return;
+
+            const newUsername = usernameInput.value;
+            const newBio = bioInput.value;
+            const newPicUrl = profilePicUrlInput.value;
+
+            if (!newUsername) {
+                showToast("Username cannot be empty.");
+                return;
+            }
+
+            saveProfileBtn.disabled = true;
+            saveProfileBtn.textContent = "Saving...";
+
+            const userDocRef = doc(db, "users", currentUserId);
+            try {
+                await updateDoc(userDocRef, {
+                    username: newUsername,
+                    bio: newBio,
+                    profilePicUrl: newPicUrl
+                });
+                showToast("Profile saved successfully!");
+                profileViewEl.classList.remove('hidden');
+                profileEditViewEl.classList.add('hidden');
+            } catch (error) {
+                console.error("Error saving profile:", error);
+                showToast("Error saving profile. Try again.");
+            } finally {
+                saveProfileBtn.disabled = false;
+                saveProfileBtn.textContent = "Save Changes";
+            }
+        });
+
+        // Preview profile pic as user types URL
+        profilePicUrlInput.addEventListener('input', () => {
+            profileEditPicImgEl.src = profilePicUrlInput.value || `https://placehold.co/100x100/fca5a5/333?text=?`;
+        });
+
+        // --- PAGE NAVIGATION ---
         const navButtons = document.querySelectorAll('.nav-button');
         const pages = document.querySelectorAll('.page-content');
         const mainHeader = document.getElementById('main-header');
         const bodyEl = document.body;
-        const navAccountButton = document.querySelector('a[data-page="account-page"]'); // Fixed selector
 
         navButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetPageId = button.dataset.page;
                 
-                // Handle Reels-specific layout
                 if (targetPageId === 'reels-page') {
                     mainHeader.classList.add('hidden');
                     bodyEl.classList.add('reels-active');
@@ -692,8 +886,6 @@
                 const targetPage = document.getElementById(targetPageId);
                 if (targetPage) {
                     targetPage.classList.remove('hidden');
-                } else {
-                    console.error('Page not found:', targetPageId);
                 }
 
                 navButtons.forEach(btn => {
