@@ -169,7 +169,7 @@
             <a href="#" id="nav-reels" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="reels-page"><i class="fas fa-film text-xl"></i><span class="text-xs mt-1">Reels</span></a>
             <a href="#" id="nav-home" class="nav-button flex flex-col items-center justify-center text-indigo-600 font-medium w-1/5" data-page="home-page"><i class="fas fa-home text-xl"></i><span class="text-xs mt-1">Home</span></a>
             <a href="#" id="nav-chats" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="chats-page"><i class="fas fa-comments text-xl"></i><span class="text-xs mt-1">Chats</span></a>
-            <a href="#" id="nav-account" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="account-page"><i class="fas fa-user-circle text-xl"></i><span class="text-xs mt-1">Account</span></a>
+            <a href="#" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="account-page"><i class="fas fa-user-circle text-xl"></i><span class="text-xs mt-1">Account</span></a>
         </div>
     </nav>
     
@@ -320,9 +320,10 @@
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
+Next, I updated the code in `social_earning_app.html` to fix the `SyntaxError` you encountered. I've corrected the `script` tag.
                 }
 
-            } catch (error) S{
+            } catch (error) {
                 console.error("Firebase Init Error:", error);
                 showToast("Error connecting to app services.");
             }
@@ -654,6 +655,9 @@
         const pages = document.querySelectorAll('.page-content');
         const mainHeader = document.getElementById('main-header');
         const bodyEl = document.body;
+        // Fix for nav-account button ID
+        const navAccountButton = document.querySelector('a[data-page="account-page"]');
+
 
         navButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -672,7 +676,13 @@
                 }
 
                 pages.forEach(page => page.classList.add('hidden'));
-                document.getElementById(targetPageId).classList.remove('hidden');
+                const targetPage = document.getElementById(targetPageId);
+                if (targetPage) {
+                    targetPage.classList.remove('hidden');
+                } else {
+                    console.error('Page not found:', targetPageId);
+                }
+
 
                 navButtons.forEach(btn => {
                     btn.classList.remove('text-indigo-600', 'font-medium');
