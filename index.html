@@ -63,7 +63,7 @@
             font-weight: 400; /* 'far' regular style */
         }
         /* Hide default file input */
-        #thumbnail-file-input {
+        #thumbnail-file-input, #video-file-input {
             display: none;
         }
     </style>
@@ -116,18 +116,22 @@
         <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Post</h2>
             
-            <!-- Video File Upload (Placeholder) -->
-            <div class="border-4 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center">
-                <i class="fas fa-cloud-upload-alt text-7xl text-indigo-400"></i>
-                <p class="text-gray-600 mt-4 mb-6">Drag & drop your video here</p>
-                <button type="button" class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-full shadow-md hover:bg-indigo-700 transition duration-300">
-                    Select Video File
+            <!-- NEW: Video File Upload -->
+            <div class="mb-6">
+                <label class="block text-lg font-medium text-gray-800 mb-2">Step 1: Upload Video</label>
+                <input type="file" id="video-file-input" accept="video/*" />
+                <button type="button" id="video-upload-btn" class="w-full bg-indigo-600 text-white font-bold px-4 py-3 rounded-lg hover:bg-indigo-700 transition duration-300 flex items-center justify-center space-x-2">
+                    <i class="fas fa-video"></i>
+                    <span>Select Video File</span>
                 </button>
-                <p class="text-sm text-gray-500 mt-2">(Video file upload is next!)</p>
+                <div id="video-preview-container" class="hidden mt-4 text-center">
+                    <video id="video-preview-player" controls class="w-full rounded-lg shadow-md bg-black"></video>
+                    <p id="video-file-name" class="text-sm text-gray-600 mt-2"></p>
+                </div>
             </div>
 
             <!-- Post Type Toggle -->
-            <div class="flex justify-center space-x-6 mt-6">
+            <div class="flex justify-center space-x-6">
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" name="postType" value="video" class="form-radio h-4 w-4 text-indigo-600 border-gray-400 focus:ring-indigo-500" checked>
                     <span class="ml-2 text-gray-700 font-medium">Video (Home Feed)</span>
@@ -143,11 +147,11 @@
             
             <!-- NEW: Thumbnail File Upload -->
             <div class="mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Image:</label>
+                <label class="block text-lg font-medium text-gray-800 mb-2">Step 2: Upload Thumbnail</label>
                 <input type="file" id="thumbnail-file-input" accept="image/*" />
                 <button type="button" id="thumbnail-upload-btn" class="w-full bg-gray-200 text-gray-700 font-bold px-4 py-3 rounded-lg hover:bg-gray-300 transition duration-300 flex items-center justify-center space-x-2">
                     <i class="fas fa-camera"></i>
-                    <span>Upload Thumbnail</span>
+                    <span>Select Thumbnail</span>
                 </button>
                 <div id="thumbnail-preview-container" class="hidden mt-4 text-center">
                     <img id="thumbnail-preview-img" src="#" alt="Thumbnail Preview" class="w-32 h-32 object-cover rounded-lg inline-block shadow-md" />
@@ -255,6 +259,14 @@
             </div>
         </div>
     </div>
+    
+    <!-- NEW: Video Player Modal -->
+    <div id="video-player-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 opacity-0 pointer-events-none">
+        <div class="modal-content bg-black w-full max-w-lg transform -translate-y-10">
+            <video id="modal-video-player" class="w-full" controls autoplay playsinline></video>
+            <button id="close-video-modal-btn" class="absolute top-2 right-2 text-white text-3xl">&times;</button>
+        </div>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast"></div>
@@ -287,8 +299,6 @@
             arrayRemove
         } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
         
-        // --- REMOVED FIREBASE STORAGE IMPORTS ---
-
         // --- GLOBAL STATE ---
         let db, auth;
         let currentUserId = null;
@@ -296,6 +306,7 @@
         let postsColRef;
         let reelsColRef;
         let selectedThumbnailFile = null;
+        let selectedVideoFile = null; // NEW: For video file
         
         // --- UI ELEMENTS ---
         const sparkBalanceEl = document.getElementById('spark-balance');
@@ -319,6 +330,12 @@
         const thumbnailPreviewContainer = document.getElementById('thumbnail-preview-container');
         const thumbnailPreviewImg = document.getElementById('thumbnail-preview-img');
         const thumbnailFileName = document.getElementById('thumbnail-file-name');
+        // NEW: Video file UI
+        const videoFileInput = document.getElementById('video-file-input');
+        const videoUploadBtn = document.getElementById('video-upload-btn');
+        const videoPreviewContainer = document.getElementById('video-preview-container');
+        const videoPreviewPlayer = document.getElementById('video-preview-player');
+        const videoFileName = document.getElementById('video-file-name');
         
         // --- Account Page UI ---
         const accountUserIdEl = document.getElementById('account-userid');
@@ -335,6 +352,11 @@
         const bioInput = document.getElementById('bio-input');
         const profilePicUrlInput = document.getElementById('profile-pic-url-input');
         const profileEditPicImgEl = document.getElementById('profile-edit-pic-img');
+        
+        // --- NEW: Video Player Modal UI ---
+        const videoPlayerModal = document.getElementById('video-player-modal');
+        const modalVideoPlayer = document.getElementById('modal-video-player');
+        const closeVideoModalBtn = document.getElementById('close-video-modal-btn');
 
         // --- FIREBASE CONFIG (Mandatory) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -356,6 +378,10 @@
             : userProvidedConfig;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+        // --- CLOUDINARY CONFIG ---
+        const CLOUDINARY_CLOUD_NAME = 'dpq8izmc8';
+        const CLOUDINARY_UPLOAD_PRESET = 'vidchat_preset';
+
 
         // --- TOAST FUNCTION ---
         function showToast(message) {
@@ -372,7 +398,6 @@
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                // --- STORAGE IS NO LONGER INITIALIZED ---
                 
                 postsColRef = collection(db, "posts");
                 reelsColRef = collection(db, "reels");
@@ -488,8 +513,8 @@
                 console.log("Database 'posts' is empty. Adding starter videos...");
                 const batch = writeBatch(db);
                 const starterVideos = [
-                    { title: "Welcome to VidChat!", thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!", creatorUsername: "VidChat Team", creatorProfilePic: "https://placehold.co/40x40/8b5cf6/333?text=V", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
-                    { title: "My First Short Film", thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 10, likeCount: 5, createdAt: serverTimestamp() },
+                    { title: "Welcome to VidChat!", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.jpg", creatorUsername: "VidChat Team", creatorProfilePic: "https://placehold.co/40x40/8b5cf6/333?text=V", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
+                    { title: "My First Short Film", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/sample.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/sample.jpg", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 10, likeCount: 5, createdAt: serverTimestamp() },
                 ];
                 starterVideos.forEach(video => batch.set(doc(postsColRef), video));
                 await batch.commit();
@@ -532,7 +557,12 @@
             const isLiked = currentUserData.likedContent && currentUserData.likedContent.includes(postId);
 
             article.innerHTML = `
-                <img src="${post.thumbnailUrl}" alt="Video thumbnail" class="rounded-t-lg w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/ef4444/ffffff?text=Image+Error'">
+                <div class="relative cursor-pointer play-video-btn">
+                    <img src="${post.thumbnailUrl}" alt="Video thumbnail" class="rounded-t-lg w-full h-48 object-cover" onerror="this.src='https://placehold.co/600x400/ef4444/ffffff?text=Image+Error'">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity">
+                        <i class="fas fa-play text-white text-5xl"></i>
+                    </div>
+                </div>
                 <div class="p-4">
                     <div class="flex space-x-3">
                         <img src="${post.creatorProfilePic || 'https://placehold.co/40x40/93c5fd/333?text=' + post.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full mt-1">
@@ -570,6 +600,19 @@
             const likeButton = article.querySelector('.like-button');
             likeButton.addEventListener('click', (e) => { e.stopPropagation(); handleLike(postId, 'posts', likeButton); });
             
+            // NEW: Open video player modal
+            const playButton = article.querySelector('.play-video-btn');
+            playButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (post.videoUrl) {
+                    modalVideoPlayer.src = post.videoUrl;
+                    videoPlayerModal.classList.remove('opacity-0', 'pointer-events-none');
+                    videoPlayerModal.querySelector('.modal-content').classList.remove('-translate-y-10');
+                } else {
+                    showToast("Video not available.");
+                }
+            });
+            
             videoGridContainer.prepend(article);
         }
         
@@ -582,8 +625,8 @@
                 console.log("Database 'reels' is empty. Adding starter reels...");
                 const batch = writeBatch(db);
                 const starterReels = [
-                    { title: "My first VidChat Reel! #fyp", thumbnailUrl: "https://placehold.co/400x700/000000/ffffff?text=Reel+1", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 88, likeCount: 1200, commentCount: 105, createdAt: serverTimestamp() },
-                    { title: "Travel goals! ✈️ #travel", thumbnailUrl: "https://placehold.co/400x700/333333/ffffff?text=Reel+2", creatorUsername: "CreatorCharlie", creatorProfilePic: "https://placehold.co/40x40/86efac/333?text=C", creatorId: "charlie456", sparkCount: 150, likeCount: 3400, commentCount: 210, createdAt: serverTimestamp() }
+                    { title: "My first VidChat Reel! #fyp", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.jpg", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 88, likeCount: 1200, commentCount: 105, createdAt: serverTimestamp() },
+                    { title: "Travel goals! ✈️ #travel", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/sample.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/sample.jpg", creatorUsername: "CreatorCharlie", creatorProfilePic: "https://placehold.co/40x40/86efac/333?text=C", creatorId: "charlie456", sparkCount: 150, likeCount: 3400, commentCount: 210, createdAt: serverTimestamp() }
                 ];
                 starterReels.forEach(reel => batch.set(doc(reelsColRef), reel));
                 await batch.commit();
@@ -616,7 +659,14 @@
             const isLiked = currentUserData.likedContent && currentUserData.likedContent.includes(reelId);
 
             div.innerHTML = `
-                <img src="${reel.thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x700/ef4444/ffffff?text=Image+Error'">
+                <video class="w-full h-full object-cover" 
+                       src="${reel.videoUrl}" 
+                       poster="${reel.thumbnailUrl}" 
+                       loop 
+                       muted 
+                       playsinline
+                       onerror="this.poster='https://placehold.co/400x700/ef4444/ffffff?text=Video+Error'">
+                </video>
                 <div class="absolute bottom-20 left-0 p-4 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
                     <div class="flex items-center space-x-2">
                         <img src="${reel.creatorProfilePic || 'https://placehold.co/40x40/93c5fd/333?text=' + reel.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full border-2 border-white">
@@ -643,6 +693,14 @@
             
             const likeButton = div.querySelector('.like-button-reel');
             likeButton.addEventListener('click', (e) => { e.stopPropagation(); handleLike(reelId, 'reels', likeButton); });
+            
+            // NEW: Play video when it scrolls into view
+            const video = div.querySelector('video');
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) video.play();
+                else video.pause();
+            }, { threshold: 0.5 });
+            observer.observe(video);
 
             reelsPageContainer.appendChild(div);
         }
@@ -720,19 +778,39 @@
             }
         }
 
-        // --- Handle Create Page Thumbnail Upload (NOW CLOUDINARY) ---
-        thumbnailUploadBtn.addEventListener('click', () => {
-            thumbnailFileInput.click(); // Trigger hidden file input
+        // --- Handle Create Page File Upload (NOW CLOUDINARY) ---
+        
+        // Video File
+        videoUploadBtn.addEventListener('click', () => {
+            videoFileInput.click();
+        });
+        videoFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedVideoFile = file;
+                videoFileName.textContent = file.name;
+                videoUploadBtn.querySelector('span').textContent = "Change Video";
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    videoPreviewPlayer.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+                videoPreviewContainer.classList.remove('hidden');
+            }
         });
 
+        // Thumbnail File
+        thumbnailUploadBtn.addEventListener('click', () => {
+            thumbnailFileInput.click();
+        });
         thumbnailFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                selectedThumbnailFile = file; // Store the file
+                selectedThumbnailFile = file;
                 thumbnailFileName.textContent = file.name;
                 thumbnailUploadBtn.querySelector('span').textContent = "Change Thumbnail";
                 
-                // Show preview
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     thumbnailPreviewImg.src = event.target.result;
@@ -742,16 +820,16 @@
             }
         });
 
-        // NEW: Upload file to Cloudinary
-        async function uploadThumbnail(file) {
+        // NEW: Generic Upload to Cloudinary
+        async function uploadToCloudinary(file, resourceType = 'image') {
             if (!file) return null;
             
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('upload_preset', 'vidchat_preset'); // YOUR PRESET NAME
-            formData.append('cloud_name', 'dpq8izmc8'); // YOUR CLOUD NAME
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
 
-            const url = 'https://api.cloudinary.com/v1_1/dpq8izmc8/image/upload';
+            const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
 
             try {
                 const response = await fetch(url, {
@@ -760,18 +838,18 @@
                 });
                 const data = await response.json();
                 if (data.secure_url) {
-                    return data.secure_url; // This is the public URL of the uploaded image
+                    return data.secure_url;
                 } else {
                     throw new Error(data.error.message);
                 }
             } catch (error) {
-                console.error("Error uploading thumbnail:", error);
+                console.error(`Error uploading ${resourceType}:`, error);
                 showToast(`Error uploading: ${error.message}`);
                 return null;
             }
         }
 
-        // Handle Create Post (NOW WITH CLOUDINARY UPLOAD)
+        // Handle Create Post (NOW WITH VIDEO & THUMBNAIL)
         createPostForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
@@ -780,36 +858,48 @@
             const postType = document.querySelector('input[name="postType"]:checked').value;
 
             if (!title) {
-                showToast("Please add a title.");
-                return;
+                showToast("Please add a title."); return;
+            }
+            if (!selectedVideoFile) {
+                showToast("Please select a video file."); return;
             }
             if (!selectedThumbnailFile) {
-                showToast("Please upload a thumbnail image.");
-                return;
+                showToast("Please upload a thumbnail image."); return;
             }
             
             uploadBtn.disabled = true;
-            uploadBtn.textContent = "Uploading Image...";
+            uploadBtn.textContent = "Uploading Video (this may take a moment)...";
 
-            // 1. Upload Thumbnail to Cloudinary
-            const thumbnailUrl = await uploadThumbnail(selectedThumbnailFile);
-            if (!thumbnailUrl) {
-                // Upload failed
+            // 1. Upload Video
+            const videoUrl = await uploadToCloudinary(selectedVideoFile, 'video');
+            if (!videoUrl) {
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = "Publish Post";
+                return;
+            }
+            
+            uploadBtn.textContent = "Uploading Thumbnail...";
+
+            // 2. Upload Thumbnail
+            const thumbnailUrl = await uploadToCloudinary(selectedThumbnailFile, 'image');
+            if (!thumbnailUrl) {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = "Publish Post";
+                // We should ideally delete the video that just uploaded, but we'll skip that for simplicity.
                 return;
             }
 
             uploadBtn.textContent = "Saving Post...";
 
-            // 2. Save post to Firestore
+            // 3. Save post to Firestore
             const targetColRef = (postType === 'video') ? postsColRef : reelsColRef;
             
             try {
                 const batch = writeBatch(db);
                 const newContentData = {
                     title: title,
-                    thumbnailUrl: thumbnailUrl, // Use the new Cloudinary URL
+                    videoUrl: videoUrl,
+                    thumbnailUrl: thumbnailUrl,
                     creatorId: currentUserId,
                     creatorUsername: currentUserData.username || "AnonymousUser",
                     creatorProfilePic: currentUserData.profilePicUrl || `https://placehold.co/40x40/93c5fd/333?text=${currentUserData.username.charAt(0).toUpperCase()}`,
@@ -830,8 +920,11 @@
                 // Reset the form
                 createPostForm.reset();
                 selectedThumbnailFile = null;
+                selectedVideoFile = null;
                 thumbnailPreviewContainer.classList.add('hidden');
+                videoPreviewContainer.classList.add('hidden');
                 thumbnailUploadBtn.querySelector('span').textContent = "Upload Thumbnail";
+                videoUploadBtn.querySelector('span').textContent = "Select Video File";
 
                 if (postType === 'video') document.getElementById('nav-home').click();
                 else document.getElementById('nav-reels').click();
@@ -850,17 +943,14 @@
             profileViewEl.classList.add('hidden');
             profileEditViewEl.classList.remove('hidden');
         });
-
         cancelEditBtn.addEventListener('click', () => {
             profileViewEl.classList.remove('hidden');
             profileEditViewEl.classList.add('hidden');
-            
             usernameInput.value = currentUserData.username;
             bioInput.value = currentUserData.bio;
             profilePicUrlInput.value = currentUserData.profilePicUrl;
             profileEditPicImgEl.src = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
         });
-
         saveProfileBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
@@ -946,6 +1036,17 @@
         });
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModalBtn.click();
+        });
+        
+        // --- NEW: VIDEO MODAL (Home Page) ---
+        closeVideoModalBtn.addEventListener('click', () => {
+            videoPlayerModal.classList.add('opacity-0', 'pointer-events-none');
+            videoPlayerModal.querySelector('.modal-content').classList.add('-translate-y-10');
+            modalVideoPlayer.pause();
+            modalVideoPlayer.src = ""; // Clear src
+        });
+        videoPlayerModal.addEventListener('click', (e) => {
+            if (e.target === videoPlayerModal) closeVideoModalBtn.click();
         });
 
         // --- START THE APP ---
