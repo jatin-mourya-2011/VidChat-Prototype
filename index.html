@@ -62,6 +62,10 @@
         .fa-heart {
             font-weight: 400; /* 'far' regular style */
         }
+        /* Hide default file input */
+        #thumbnail-file-input {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -109,18 +113,20 @@
 
     <!-- Create Page -->
     <main id="create-page" class="page-content container mx-auto max-w-lg p-4 mt-6 pb-24 hidden">
-        <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8 text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Create New Post</h2>
+        <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Post</h2>
             
+            <!-- Video File Upload (Placeholder) -->
             <div class="border-4 border-dashed border-gray-300 rounded-lg p-12 flex flex-col items-center justify-center">
                 <i class="fas fa-cloud-upload-alt text-7xl text-indigo-400"></i>
                 <p class="text-gray-600 mt-4 mb-6">Drag & drop your video here</p>
                 <button type="button" class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-full shadow-md hover:bg-indigo-700 transition duration-300">
-                    Select File
+                    Select Video File
                 </button>
-                <p class="text-sm text-gray-500 mt-2">(Prototype: Just fill the fields below)</p>
+                <p class="text-sm text-gray-500 mt-2">(Video file upload is next!)</p>
             </div>
 
+            <!-- Post Type Toggle -->
             <div class="flex justify-center space-x-6 mt-6">
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" name="postType" value="video" class="form-radio h-4 w-4 text-indigo-600 border-gray-400 focus:ring-indigo-500" checked>
@@ -132,11 +138,25 @@
                 </label>
             </div>
 
+            <!-- Title Input -->
             <input id="post-title" class="w-full border border-gray-300 rounded-lg p-3 mt-6 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Title or Description..." required />
-            <input id="post-thumbnail" class="w-full border border-gray-300 rounded-lg p-3 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Thumbnail/Poster URL (e.g., https://placehold.co/...)" required />
             
-            <button type="submit" id="upload-btn" class="bg-red-500 text-white font-bold px-8 py-3 rounded-full shadow-md hover:bg-red-600 transition duration-300 mt-4 w-full">
-                Upload
+            <!-- NEW: Thumbnail File Upload -->
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Image:</label>
+                <input type="file" id="thumbnail-file-input" accept="image/*" />
+                <button type="button" id="thumbnail-upload-btn" class="w-full bg-gray-200 text-gray-700 font-bold px-4 py-3 rounded-lg hover:bg-gray-300 transition duration-300 flex items-center justify-center space-x-2">
+                    <i class="fas fa-camera"></i>
+                    <span>Upload Thumbnail</span>
+                </button>
+                <div id="thumbnail-preview-container" class="hidden mt-4 text-center">
+                    <img id="thumbnail-preview-img" src="#" alt="Thumbnail Preview" class="w-32 h-32 object-cover rounded-lg inline-block shadow-md" />
+                    <p id="thumbnail-file-name" class="text-sm text-gray-600 mt-2"></p>
+                </div>
+            </div>
+            
+            <button type="submit" id="upload-btn" class="bg-red-500 text-white font-bold px-8 py-3 rounded-full shadow-md hover:bg-red-600 transition duration-300 mt-6 w-full">
+                Publish Post
             </button>
         </form>
     </main>
@@ -223,6 +243,7 @@
     <!-- "How to Earn" Modal -->
     <div id="earn-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 opacity-0 pointer-events-none">
         <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg p-6 m-4 transform -translate-y-10">
+            <!-- Modal content... -->
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">How to Earn Sparks ✨</h2>
                 <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
@@ -240,14 +261,14 @@
 
     <!-- Firebase SDK Imports -->
     <script type="module">
-        // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // Firebase Imports - UPDATED TO 12.4.0
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
         import { 
             getAuth, 
             signInAnonymously, 
             signInWithCustomToken, 
             onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
         import { 
             getFirestore, 
             doc, 
@@ -256,16 +277,17 @@
             updateDoc, 
             collection, 
             onSnapshot,
-            addDoc,
             writeBatch,
             increment,
             serverTimestamp,
             query,
             limit,
             getDocs,
-            arrayUnion,    // NEW: For 'like' system
-            arrayRemove    // NEW: For 'unlike' system
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            arrayUnion,
+            arrayRemove
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+        
+        // --- REMOVED FIREBASE STORAGE IMPORTS ---
 
         // --- GLOBAL STATE ---
         let db, auth;
@@ -273,6 +295,7 @@
         let currentUserData = {};
         let postsColRef;
         let reelsColRef;
+        let selectedThumbnailFile = null;
         
         // --- UI ELEMENTS ---
         const sparkBalanceEl = document.getElementById('spark-balance');
@@ -287,8 +310,15 @@
         const loadingPostsEl = document.getElementById('loading-posts');
         const reelsPageContainer = document.getElementById('reels-page');
         const loadingReelsEl = document.getElementById('loading-reels');
+        
+        // --- Create Page UI ---
         const createPostForm = document.getElementById('create-post-form');
         const uploadBtn = document.getElementById('upload-btn');
+        const thumbnailFileInput = document.getElementById('thumbnail-file-input');
+        const thumbnailUploadBtn = document.getElementById('thumbnail-upload-btn');
+        const thumbnailPreviewContainer = document.getElementById('thumbnail-preview-container');
+        const thumbnailPreviewImg = document.getElementById('thumbnail-preview-img');
+        const thumbnailFileName = document.getElementById('thumbnail-file-name');
         
         // --- Account Page UI ---
         const accountUserIdEl = document.getElementById('account-userid');
@@ -306,18 +336,21 @@
         const profilePicUrlInput = document.getElementById('profile-pic-url-input');
         const profileEditPicImgEl = document.getElementById('profile-edit-pic-img');
 
-
         // --- FIREBASE CONFIG (Mandatory) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // --- YOUR NEW 'vidchat-new' CONFIG ---
         const userProvidedConfig = {
-          apiKey: "AIzaSyDa1qEbObnYVIpMvXoF8afXBvcG-DhR_uY",
-          authDomain: "vidchat-2011.firebaseapp.com",
-          projectId: "vidchat-2011",
-          storageBucket: "vidchat-2011.firebasestorage.app",
-          messagingSenderId: "1091989305105",
-          appId: "1:1091989305105:web:f6da79a45105151b0dfeb0",
-          measurementId: "G-SM1VE2SE0B"
+            apiKey: "AIzaSyAcBqHhJfwhcwCg2zvSkmP_fKWC34lbdos",
+            authDomain: "vidchat-new.firebaseapp.com",
+            projectId: "vidchat-new",
+            storageBucket: "vidchat-new.firebasestorage.app",
+            messagingSenderId: "236995445201",
+            appId: "1:236995445201:web:58cc3fbc0dc3aeca3960f0",
+            measurementId: "G-XTZHL6PTZH"
         };
+        // --- END NEW CONFIG ---
+
         const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config !== '{}'
             ? JSON.parse(__firebase_config) 
             : userProvidedConfig;
@@ -339,6 +372,7 @@
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                // --- STORAGE IS NO LONGER INITIALIZED ---
                 
                 postsColRef = collection(db, "posts");
                 reelsColRef = collection(db, "reels");
@@ -382,12 +416,12 @@
                 await setDoc(userDocRef, {
                     uid: userId,
                     username: "AnonymousUser",
-                    bio: "Welcome to VidChat!", // NEW
-                    profilePicUrl: `https://placehold.co/100x100/fca5a5/333?text=${"A".charAt(0).toUpperCase()}`, // NEW
+                    bio: "Welcome to VidChat!",
+                    profilePicUrl: `https://placehold.co/100x100/fca5a5/333?text=A`,
                     sparkBalance: 100,
                     lastBonusClaim: null,
                     postCount: 0,
-                    likedContent: [] // NEW: To track likes
+                    likedContent: []
                 });
                 showToast("Welcome! You've received 100 Sparks! ✨");
             }
@@ -398,24 +432,17 @@
             onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     currentUserData = docSnap.data();
-                    
-                    // Update all wallet balances
                     updateSparkBalance(currentUserData.sparkBalance);
-                    
-                    // Update bonus button
                     checkBonusButtonState(currentUserData.lastBonusClaim);
                     
-                    // Update Account Page
                     accountUsernameEl.textContent = currentUserData.username;
                     accountBioEl.textContent = currentUserData.bio;
                     userPostCountDisplayEl.textContent = currentUserData.postCount || 0;
                     
-                    // Update profile picture
                     const picUrl = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
                     profilePicImgEl.src = picUrl;
                     profileEditPicImgEl.src = picUrl;
 
-                    // Update inputs for edit form
                     usernameInput.value = currentUserData.username;
                     bioInput.value = currentUserData.bio;
                     profilePicUrlInput.value = currentUserData.profilePicUrl;
@@ -436,14 +463,14 @@
                     claimBonusBtn.disabled = true;
                     bonusSubtitle.textContent = "You've claimed your bonus for today.";
                     claimBonusBtn.textContent = "Claimed";
-                    claimBonusBtn.classList.remove('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
                     claimBonusBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                    claimBonusBtn.classList.remove('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
                 } else {
                     claimBonusBtn.disabled = false;
                     bonusSubtitle.textContent = "Claim your daily engagement bonus.";
                     claimBonusBtn.textContent = "Claim 10 ✨";
-                    claimBonusBtn.classList.add('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
                     claimBonusBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                    claimBonusBtn.classList.add('bg-white', 'text-indigo-600', 'hover:bg-gray-100');
                 }
             } else {
                 claimBonusBtn.disabled = false;
@@ -461,9 +488,8 @@
                 console.log("Database 'posts' is empty. Adding starter videos...");
                 const batch = writeBatch(db);
                 const starterVideos = [
-                    { title: "Welcome to VidChat!", thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
-                    { title: "My First Short Film", thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film", creatorUsername: "CreatorAlice", creatorId: "alice123", sparkCount: 10, likeCount: 5, createdAt: serverTimestamp() },
-                    { title: "How to Earn Sparks", thumbnailUrl: "https://placehold.co/600x400/f59e0b/ffffff?text=Earn+✨", creatorUsername: "VidChat Team", creatorId: "system", sparkCount: 42, likeCount: 22, createdAt: serverTimestamp() }
+                    { title: "Welcome to VidChat!", thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Welcome!", creatorUsername: "VidChat Team", creatorProfilePic: "https://placehold.co/40x40/8b5cf6/333?text=V", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
+                    { title: "My First Short Film", thumbnailUrl: "https://placehold.co/600x400/ec4899/ffffff?text=Short+Film", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 10, likeCount: 5, createdAt: serverTimestamp() },
                 ];
                 starterVideos.forEach(video => batch.set(doc(postsColRef), video));
                 await batch.commit();
@@ -475,7 +501,7 @@
             populateStarterVideos().then(() => {
                 const q = query(postsColRef);
                 onSnapshot(q, (querySnapshot) => {
-                    videoGridContainer.innerHTML = ''; // Clear
+                    videoGridContainer.innerHTML = '';
                     if (querySnapshot.empty) {
                         loadingPostsEl.textContent = "No videos posted yet. Be the first!";
                         videoGridContainer.appendChild(loadingPostsEl);
@@ -503,7 +529,6 @@
                 else if (seconds > 0) timestamp = `${seconds}s ago`;
             }
 
-            // Check if user has liked this post
             const isLiked = currentUserData.likedContent && currentUserData.likedContent.includes(postId);
 
             article.innerHTML = `
@@ -519,7 +544,6 @@
                     </div>
                     <div class="mt-4 flex justify-between items-center">
                         <div class="flex space-x-4">
-                            <!-- NEW: Like button for home posts -->
                             <button class="like-button text-gray-500 hover:text-red-500 transition ${isLiked ? 'liked' : ''}">
                                 <i class="fas fa-heart text-xl"></i>
                                 <span class="like-count text-sm ml-1">${post.likeCount || 0}</span>
@@ -540,19 +564,11 @@
                 </div>
             `;
             
-            // Add tip button event listener
             const tipButton = article.querySelector('.tip-button');
-            tipButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleTip(postId, 'posts');
-            });
-
-            // NEW: Add like button event listener
+            tipButton.addEventListener('click', (e) => { e.stopPropagation(); handleTip(postId, 'posts'); });
+            
             const likeButton = article.querySelector('.like-button');
-            likeButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleLike(postId, 'posts', likeButton);
-            });
+            likeButton.addEventListener('click', (e) => { e.stopPropagation(); handleLike(postId, 'posts', likeButton); });
             
             videoGridContainer.prepend(article);
         }
@@ -579,7 +595,7 @@
             populateStarterReels().then(() => {
                 const q = query(reelsColRef);
                 onSnapshot(q, (querySnapshot) => {
-                    reelsPageContainer.innerHTML = ''; // Clear
+                    reelsPageContainer.innerHTML = '';
                     if (querySnapshot.empty) {
                         loadingReelsEl.textContent = "No reels posted yet.";
                         reelsPageContainer.appendChild(loadingReelsEl);
@@ -597,15 +613,10 @@
             const div = document.createElement('div');
             div.className = "reel-item bg-black relative w-full overflow-hidden";
             div.dataset.reelId = reelId;
-
-            // Check if user has liked this reel
             const isLiked = currentUserData.likedContent && currentUserData.likedContent.includes(reelId);
 
             div.innerHTML = `
                 <img src="${reel.thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x700/ef4444/ffffff?text=Image+Error'">
-                
-                <!-- Video content would go here -->
-                
                 <div class="absolute bottom-20 left-0 p-4 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
                     <div class="flex items-center space-x-2">
                         <img src="${reel.creatorProfilePic || 'https://placehold.co/40x40/93c5fd/333?text=' + reel.creatorUsername.charAt(0).toUpperCase()}" alt="Creator Avatar" class="w-10 h-10 rounded-full border-2 border-white">
@@ -613,39 +624,25 @@
                     </div>
                     <p class="text-sm mt-2">${reel.title}</p>
                 </div>
-                
                 <div class="absolute bottom-20 right-2 flex flex-col space-y-5 text-white text-2xl" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-                    <!-- DYNAMIC LIKE BUTTON -->
                     <button class="like-button-reel flex flex-col items-center ${isLiked ? 'liked' : ''}">
                         <i class="fas fa-heart"></i>
                         <span class="like-count text-sm font-semibold">${reel.likeCount || 0}</span>
                     </button>
-                    
                     <button class="flex flex-col items-center"><i class="fas fa-comment"></i><span class="text-sm font-semibold">${reel.commentCount || 0}</span></button>
-                    
-                    <!-- DYNAMIC TIP BUTTON -->
                     <button class="tip-button-reel flex flex-col items-center text-yellow-300">
                         <i class="fas fa-star"></i>
                         <span class="spark-total text-sm font-semibold">${reel.sparkCount || 0}</span>
                     </button>
-                    
                     <button class="flex flex-col items-center"><i class="fas fa-share"></i><span class="text-sm font-semibold">Share</span></button>
                 </div>
             `;
             
-            // Add tip button event listener
             const tipButton = div.querySelector('.tip-button-reel');
-            tipButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleTip(reelId, 'reels');
-            });
+            tipButton.addEventListener('click', (e) => { e.stopPropagation(); handleTip(reelId, 'reels'); });
             
-            // NEW: Add like button event listener
             const likeButton = div.querySelector('.like-button-reel');
-            likeButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleLike(reelId, 'reels', likeButton);
-            });
+            likeButton.addEventListener('click', (e) => { e.stopPropagation(); handleLike(reelId, 'reels', likeButton); });
 
             reelsPageContainer.appendChild(div);
         }
@@ -658,14 +655,9 @@
             claimBonusBtn.disabled = true;
             const userDocRef = doc(db, "users", currentUserId);
             try {
-                await updateDoc(userDocRef, {
-                    sparkBalance: increment(10),
-                    lastBonusClaim: serverTimestamp()
-                });
+                await updateDoc(userDocRef, { sparkBalance: increment(10), lastBonusClaim: serverTimestamp() });
                 showToast("🎁 10 Sparks claimed!");
             } catch (error) {
-                console.error("Error claiming bonus: ", error);
-                showToast("Error claiming bonus. Try again.");
                 claimBonusBtn.disabled = false;
             }
         });
@@ -677,51 +669,38 @@
                 showToast("❌ You're out of Sparks! Claim your daily bonus.");
                 return;
             }
-
             const userDocRef = doc(db, "users", currentUserId);
             const contentDocRef = doc(db, collectionName, docId); 
-
             try {
                 const batch = writeBatch(db);
                 batch.update(userDocRef, { sparkBalance: increment(-1) });
                 batch.update(contentDocRef, { sparkCount: increment(1) });
                 await batch.commit();
-                
                 showToast("✨ You tipped 1 Spark!");
-                
                 const postSnap = await getDoc(contentDocRef);
-                const newSparkCount = postSnap.data().sparkCount;
-                if (newSparkCount === 10) {
+                if (postSnap.data().sparkCount === 10) {
                      await updateDoc(userDocRef, { sparkBalance: increment(20) });
                      showToast("🎉 Curation Bonus! +20 Sparks");
                 }
-
-            } catch (error) {
-                console.error("Error tipping post: ", error);
-            }
+            } catch (error) { console.error("Error tipping post: ", error); }
         }
         
-        // NEW: Handle Liking
+        // Handle Liking
         async function handleLike(docId, collectionName, likeButton) {
             if (!currentUserId) return;
-
             const userDocRef = doc(db, "users", currentUserId);
             const contentDocRef = doc(db, collectionName, docId);
             const isCurrentlyLiked = currentUserData.likedContent && currentUserData.likedContent.includes(docId);
-
             const likeCountEl = likeButton.querySelector('.like-count');
             let currentLikeCount = parseInt(likeCountEl.textContent);
-
             try {
                 const batch = writeBatch(db);
                 if (isCurrentlyLiked) {
-                    // --- Unlike ---
                     batch.update(userDocRef, { likedContent: arrayRemove(docId) });
                     batch.update(contentDocRef, { likeCount: increment(-1) });
                     likeButton.classList.remove('liked');
                     likeCountEl.textContent = currentLikeCount - 1;
                 } else {
-                    // --- Like ---
                     batch.update(userDocRef, { likedContent: arrayUnion(docId) });
                     batch.update(contentDocRef, { likeCount: increment(1) });
                     likeButton.classList.add('liked');
@@ -731,7 +710,6 @@
             } catch (error) {
                 console.error("Error liking content:", error);
                 showToast("Error liking. Please try again.");
-                // Revert UI on error
                 if (isCurrentlyLiked) {
                     likeButton.classList.add('liked');
                     likeCountEl.textContent = currentLikeCount;
@@ -742,69 +720,132 @@
             }
         }
 
-        // Handle Create Post
+        // --- Handle Create Page Thumbnail Upload (NOW CLOUDINARY) ---
+        thumbnailUploadBtn.addEventListener('click', () => {
+            thumbnailFileInput.click(); // Trigger hidden file input
+        });
+
+        thumbnailFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedThumbnailFile = file; // Store the file
+                thumbnailFileName.textContent = file.name;
+                thumbnailUploadBtn.querySelector('span').textContent = "Change Thumbnail";
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    thumbnailPreviewImg.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+                thumbnailPreviewContainer.classList.remove('hidden');
+            }
+        });
+
+        // NEW: Upload file to Cloudinary
+        async function uploadThumbnail(file) {
+            if (!file) return null;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', 'vidchat_preset'); // YOUR PRESET NAME
+            formData.append('cloud_name', 'dpq8izmc8'); // YOUR CLOUD NAME
+
+            const url = 'https://api.cloudinary.com/v1_1/dpq8izmc8/image/upload';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.secure_url) {
+                    return data.secure_url; // This is the public URL of the uploaded image
+                } else {
+                    throw new Error(data.error.message);
+                }
+            } catch (error) {
+                console.error("Error uploading thumbnail:", error);
+                showToast(`Error uploading: ${error.message}`);
+                return null;
+            }
+        }
+
+        // Handle Create Post (NOW WITH CLOUDINARY UPLOAD)
         createPostForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
 
             const title = document.getElementById('post-title').value;
-            const thumbnailUrl = document.getElementById('post-thumbnail').value;
             const postType = document.querySelector('input[name="postType"]:checked').value;
 
-            if (!title || !thumbnailUrl) {
-                showToast("Please fill out all fields.");
+            if (!title) {
+                showToast("Please add a title.");
+                return;
+            }
+            if (!selectedThumbnailFile) {
+                showToast("Please upload a thumbnail image.");
                 return;
             }
             
             uploadBtn.disabled = true;
-            uploadBtn.textContent = "Uploading...";
+            uploadBtn.textContent = "Uploading Image...";
 
+            // 1. Upload Thumbnail to Cloudinary
+            const thumbnailUrl = await uploadThumbnail(selectedThumbnailFile);
+            if (!thumbnailUrl) {
+                // Upload failed
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = "Publish Post";
+                return;
+            }
+
+            uploadBtn.textContent = "Saving Post...";
+
+            // 2. Save post to Firestore
             const targetColRef = (postType === 'video') ? postsColRef : reelsColRef;
             
             try {
                 const batch = writeBatch(db);
-
                 const newContentData = {
                     title: title,
-                    thumbnailUrl: thumbnailUrl,
+                    thumbnailUrl: thumbnailUrl, // Use the new Cloudinary URL
                     creatorId: currentUserId,
-                    // Use the current user's profile data
                     creatorUsername: currentUserData.username || "AnonymousUser",
                     creatorProfilePic: currentUserData.profilePicUrl || `https://placehold.co/40x40/93c5fd/333?text=${currentUserData.username.charAt(0).toUpperCase()}`,
                     sparkCount: 0,
-                    likeCount: 0, // NEW: Start with 0 likes
+                    likeCount: 0,
                     createdAt: serverTimestamp()
                 };
                 
-                if (postType === 'reel') {
-                    newContentData.commentCount = 0;
-                }
+                if (postType === 'reel') newContentData.commentCount = 0;
                 
                 batch.set(doc(targetColRef), newContentData);
-
                 const userDocRef = doc(db, "users", currentUserId);
                 batch.update(userDocRef, { postCount: increment(1) });
                 
                 await batch.commit();
-                showToast("✅ Content Uploaded!");
-                createPostForm.reset();
+                showToast("✅ Content Published!");
                 
-                if (postType === 'video') {
-                    document.getElementById('nav-home').click();
-                } else {
-                    document.getElementById('nav-reels').click();
-                }
+                // Reset the form
+                createPostForm.reset();
+                selectedThumbnailFile = null;
+                thumbnailPreviewContainer.classList.add('hidden');
+                thumbnailUploadBtn.querySelector('span').textContent = "Upload Thumbnail";
+
+                if (postType === 'video') document.getElementById('nav-home').click();
+                else document.getElementById('nav-reels').click();
 
             } catch (error) {
                 console.error("Error uploading post: ", error);
                 showToast("Upload failed. Please try again.");
             } finally {
                 uploadBtn.disabled = false;
-                uploadBtn.textContent = "Upload";
+                uploadBtn.textContent = "Publish Post";
             }
         });
 
-        // --- NEW: Account Page Edit/Save Logic ---
+        // --- Account Page Edit/Save Logic ---
         editProfileBtn.addEventListener('click', () => {
             profileViewEl.classList.add('hidden');
             profileEditViewEl.classList.remove('hidden');
@@ -814,7 +855,6 @@
             profileViewEl.classList.remove('hidden');
             profileEditViewEl.classList.add('hidden');
             
-            // Reset inputs to original values
             usernameInput.value = currentUserData.username;
             bioInput.value = currentUserData.bio;
             profilePicUrlInput.value = currentUserData.profilePicUrl;
@@ -824,19 +864,15 @@
         saveProfileBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
-
             const newUsername = usernameInput.value;
             const newBio = bioInput.value;
             const newPicUrl = profilePicUrlInput.value;
-
             if (!newUsername) {
                 showToast("Username cannot be empty.");
                 return;
             }
-
             saveProfileBtn.disabled = true;
             saveProfileBtn.textContent = "Saving...";
-
             const userDocRef = doc(db, "users", currentUserId);
             try {
                 await updateDoc(userDocRef, {
@@ -856,7 +892,6 @@
             }
         });
 
-        // Preview profile pic as user types URL
         profilePicUrlInput.addEventListener('input', () => {
             profileEditPicImgEl.src = profilePicUrlInput.value || `https://placehold.co/100x100/fca5a5/333?text=?`;
         });
@@ -881,12 +916,9 @@
                     bodyEl.classList.remove('reels-active');
                     document.getElementById('reels-page').classList.remove('reels-active');
                 }
-
                 pages.forEach(page => page.classList.add('hidden'));
                 const targetPage = document.getElementById(targetPageId);
-                if (targetPage) {
-                    targetPage.classList.remove('hidden');
-                }
+                if (targetPage) targetPage.classList.remove('hidden');
 
                 navButtons.forEach(btn => {
                     btn.classList.remove('text-indigo-600', 'font-medium');
@@ -917,6 +949,7 @@
         });
 
         // --- START THE APP ---
+        // We still need to enable Firestore & Auth in the NEW 'vidchat-new' project
         initializeFirebase();
 
     </script>
