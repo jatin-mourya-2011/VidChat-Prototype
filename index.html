@@ -820,7 +820,7 @@
             }
         });
 
-        // NEW: Generic Upload to Cloudinary
+        // NEW: Generic Upload to Cloudinary (FIXED)
         async function uploadToCloudinary(file, resourceType = 'image') {
             if (!file) return null;
             
@@ -828,6 +828,11 @@
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+            
+            // --- THIS IS THE FIX ---
+            // We must tell Cloudinary what type of resource we're uploading.
+            formData.append('resource_type', resourceType);
+            // --- END OF FIX ---
 
             const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
 
@@ -840,11 +845,13 @@
                 if (data.secure_url) {
                     return data.secure_url;
                 } else {
+                    // Provide a more detailed error
+                    console.error("Cloudinary Error:", data.error.message);
                     throw new Error(data.error.message);
                 }
             } catch (error) {
                 console.error(`Error uploading ${resourceType}:`, error);
-                showToast(`Error uploading: ${error.message}`);
+                showToast(`Upload Error: ${error.message}`);
                 return null;
             }
         }
