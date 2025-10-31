@@ -259,9 +259,28 @@
             <form id="profile-edit-view" class="hidden text-center">
                 <div class="flex flex-col items-center">
                     <img id="profile-edit-pic-img" src="https://placehold.co/100x100/fca5a5/333?text=U" alt="Your Avatar" class="w-24 h-24 rounded-full shadow-lg">
-                    <input id="profile-pic-url-input" class="w-full border border-gray-300 rounded-lg p-2 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Profile Picture URL..." />
-                    <input id="username-input" class="w-full text-2xl font-bold text-center border border-gray-300 rounded-lg p-2 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Your Username..." />
-                    <textarea id="bio-input" class="w-full text-center border border-gray-300 rounded-lg p-2 mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3" placeholder="Your Bio..."></textarea>
+                    
+                    <!-- NEW: Show non-editable username -->
+                    <div class="w-full mt-4">
+                        <label class="block text-sm font-medium text-left text-gray-700">Username</label>
+                        <input id="username-display-disabled" type="text" class="w-full bg-gray-100 border border-gray-300 rounded-lg p-3 mt-1 focus:outline-none text-gray-500" disabled />
+                    </div>
+
+                    <!-- FIX: Update ID and placeholder -->
+                    <div class="w-full mt-4">
+                        <label class="block text-sm font-medium text-left text-gray-700">Display Name</label>
+                        <input id="displayname-input" class="w-full border border-gray-300 rounded-lg p-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Your Display Name..." />
+                    </div>
+
+                    <div class="w-full mt-4">
+                        <label class="block text-sm font-medium text-left text-gray-700">Profile Picture URL</label>
+                        <input id="profile-pic-url-input" class="w-full border border-gray-300 rounded-lg p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Profile Picture URL..." />
+                    </div>
+                    
+                    <div class="w-full mt-4">
+                        <label class="block text-sm font-medium text-left text-gray-700">Bio</label>
+                        <textarea id="bio-input" class="w-full border border-gray-300 rounded-lg p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3" placeholder="Your Bio..."></textarea>
+                    </div>
                 </div>
                 <div class="flex space-x-4 justify-center mt-4">
                     <button id="cancel-edit-btn" type="button" class="bg-gray-200 text-gray-800 font-bold px-5 py-2 rounded-full shadow-md hover:bg-gray-300 transition duration-300">
@@ -408,11 +427,12 @@
         const editProfileBtn = document.getElementById('edit-profile-btn');
         const saveProfileBtn = document.getElementById('save-profile-btn');
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
-        const usernameInput = document.getElementById('username-input');
+        const displaynameInput = document.getElementById('displayname-input'); // FIX: Was usernameInput
         const bioInput = document.getElementById('bio-input');
         const profilePicUrlInput = document.getElementById('profile-pic-url-input');
         const profileEditPicImgEl = document.getElementById('profile-edit-pic-img');
         const logoutBtn = document.getElementById('logout-btn');
+        const usernameDisplayDisabled = document.getElementById('username-display-disabled'); // NEW
         
         // --- Video Player Modal UI ---
         const videoPlayerModal = document.getElementById('video-player-modal');
@@ -603,7 +623,8 @@
                     profilePicImgEl.src = picUrl;
                     profileEditPicImgEl.src = picUrl;
 
-                    usernameInput.value = currentUserData.displayName; // Edit form uses Display Name
+                    displaynameInput.value = currentUserData.displayName; // FIX: Was usernameInput
+                    usernameDisplayDisabled.value = `@${currentUserData.username}`; // NEW
                     bioInput.value = currentUserData.bio;
                     profilePicUrlInput.value = currentUserData.profilePicUrl;
                 }
@@ -1097,7 +1118,8 @@
         // --- Account Page Edit/Save Logic ---
         editProfileBtn.addEventListener('click', () => {
             // Pre-fill with current data from the `currentUserData` object
-            usernameInput.value = currentUserData.displayName; // Note: We edit 'displayName' not 'username'
+            displaynameInput.value = currentUserData.displayName; // FIX: Was usernameInput
+            usernameDisplayDisabled.value = `@${currentUserData.username}`; // NEW
             bioInput.value = currentUserData.bio;
             profilePicUrlInput.value = currentUserData.profilePicUrl;
             profileEditPicImgEl.src = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
@@ -1108,11 +1130,17 @@
         cancelEditBtn.addEventListener('click', () => {
             profileViewEl.classList.remove('hidden');
             profileEditViewEl.classList.add('hidden');
+            
+            // Reset values to current data
+            displaynameInput.value = currentUserData.displayName;
+            bioInput.value = currentUserData.bio;
+            profilePicUrlInput.value = currentUserData.profilePicUrl;
+            profileEditPicImgEl.src = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
         });
         saveProfileBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
-            const newDisplayName = usernameInput.value;
+            const newDisplayName = displaynameInput.value; // FIX: Was usernameInput
             const newBio = bioInput.value;
             const newPicUrl = profilePicUrlInput.value;
             
@@ -1220,4 +1248,5 @@
     </script>
 </body>
 </html>
+
 
