@@ -14,6 +14,10 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* A class for all main app UI that should be hidden before login */
+        .app-content {
+            display: none;
+        }
         .modal { transition: opacity 0.25s ease; }
         .modal-content { transition: transform 0.25s ease; }
         #toast {
@@ -70,8 +74,59 @@
 </head>
 <body class="bg-gray-100">
 
-    <!-- Header -->
-    <header id="main-header" class="bg-white shadow-md sticky top-0 z-50">
+    <!-- NEW: Login Page (Visible by default) -->
+    <main id="login-page" class="page-content container mx-auto max-w-sm p-4 mt-20 text-center">
+        <div class="bg-white p-8 rounded-2xl shadow-xl">
+            <h1 class="text-4xl font-bold text-indigo-600">
+                Vid<span class="text-red-500">Chat</span>
+            </h1>
+            <p class="text-gray-600 mt-4">The social app where everyone earns.</p>
+            <p id="auth-loading" class="text-gray-500 mt-8">Connecting...</p>
+            <button id="google-login-btn" class="hidden mt-8 w-full bg-blue-600 text-white font-bold px-4 py-3 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center space-x-2">
+                <i class="fab fa-google"></i>
+                <span>Sign in with Google</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- NEW: Complete Profile Page (Hidden by default) -->
+    <main id="complete-profile-page" class="page-content container mx-auto max-w-lg p-4 mt-12 pb-24 hidden">
+        <form id="complete-profile-form" class="bg-white rounded-lg shadow-md p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Welcome! Let's get you set up.</h2>
+            
+            <div class="flex flex-col items-center">
+                <img id="profile-setup-pic-img" src="https://placehold.co/100x100/fca5a5/333?text=?" alt="Your Avatar" class="w-24 h-24 rounded-full shadow-lg">
+            </div>
+
+            <div class="mt-4">
+                <label for="profile-setup-username" class="block text-sm font-medium text-gray-700">Username (required)</label>
+                <input id="profile-setup-username" type="text" class="w-full border border-gray-300 rounded-lg p-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. CreatorAlice" required />
+                <p class="text-xs text-gray-500 mt-1">This is your unique @name. No spaces.</p>
+            </div>
+
+            <div class="mt-4">
+                <label for="profile-setup-displayname" class="block text-sm font-medium text-gray-700">Display Name</label>
+                <input id="profile-setup-displayname" type="text" class="w-full border border-gray-300 rounded-lg p-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Your full name" />
+            </div>
+            
+            <div class="mt-4">
+                <label for="profile-setup-bio" class="block text-sm font-medium text-gray-700">Bio</label>
+                <textarea id="profile-setup-bio" class="w-full border border-gray-300 rounded-lg p-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3" placeholder="Tell us about yourself..."></textarea>
+            </div>
+            
+            <div class="mt-4">
+                <label for="profile-setup-pic-url" class="block text-sm font-medium text-gray-700">Profile Picture URL</label>
+                <input id="profile-setup-pic-url" type="text" class="w-full border border-gray-300 rounded-lg p-3 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://..." />
+            </div>
+
+            <button type="submit" id="save-new-profile-btn" class="bg-indigo-600 text-white font-bold px-8 py-3 rounded-full shadow-md hover:bg-indigo-700 transition duration-300 mt-6 w-full">
+                Save and Continue
+            </button>
+        </form>
+    </main>
+
+    <!-- Header (NOW HIDDEN BY DEFAULT) -->
+    <header id="main-header" class="app-content bg-white shadow-md sticky top-0 z-50">
         <nav class="container mx-auto max-w-4xl px-4 py-3 flex justify-between items-center">
             <div class="text-2xl font-bold text-indigo-600">
                 Vid<span class="text-red-500">Chat</span>
@@ -91,13 +146,13 @@
         </nav>
     </header>
 
-    <!-- Home Page -->
-    <main id="home-page" class="page-content container mx-auto max-w-6xl p-4 mt-6 pb-24">
+    <!-- Home Page (HIDDEN BY DEFAULT) -->
+    <main id="home-page" class="app-content page-content container mx-auto max-w-6xl p-4 mt-6 pb-24 hidden">
         
         <!-- Daily Reward Banner -->
         <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-5 rounded-lg shadow-lg mb-6 flex items-center justify-between">
             <div>
-                <h2 class="text-xl font-bold">Welcome Back!</h2>
+                <h2 class="text-xl font-bold">Welcome Back, <span id="welcome-username">User</span>!</h2>
                 <p id="bonus-subtitle" class="text-indigo-100">Claim your daily engagement bonus.</p>
             </div>
             <button id="claim-bonus-btn" class="bg-white text-indigo-600 font-bold px-5 py-2 rounded-full shadow-md hover:bg-gray-100 transition duration-300">
@@ -111,8 +166,8 @@
         </div>
     </main>
 
-    <!-- Create Page -->
-    <main id="create-page" class="page-content container mx-auto max-w-lg p-4 mt-6 pb-24 hidden">
+    <!-- Create Page (HIDDEN BY DEFAULT) -->
+    <main id="create-page" class="app-content page-content container mx-auto max-w-lg p-4 mt-6 pb-24 hidden">
         <form id="create-post-form" class="bg-white rounded-lg shadow-md p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Post</h2>
             
@@ -165,13 +220,13 @@
         </form>
     </main>
     
-    <!-- Reels Page (Dynamic Container) -->
-    <main id="reels-page" class="page-content hidden">
+    <!-- Reels Page (HIDDEN BY DEFAULT) -->
+    <main id="reels-page" class="app-content page-content hidden">
         <p id="loading-reels" class="text-white text-center text-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Loading reels...</p>
     </main>
 
-    <!-- Chats Page (Placeholder) -->
-    <main id="chats-page" class="page-content container mx-auto max-w-xl p-0 mt-6 pb-24 hidden">
+    <!-- Chats Page (HIDDEN BY DEFAULT) -->
+    <main id="chats-page" class="app-content page-content container mx-auto max-w-xl p-0 mt-6 pb-24 hidden">
         <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <h2 class="text-2xl font-bold text-gray-800 p-4 border-b">Chats</h2>
             <div class="divide-y divide-gray-200">
@@ -181,8 +236,8 @@
         </div>
     </main>
 
-    <!-- Account Page (NOW DYNAMIC) -->
-    <main id="account-page" class="page-content container mx-auto max-w-xl p-4 mt-6 pb-24 hidden">
+    <!-- Account Page (HIDDEN BY DEFAULT) -->
+    <main id="account-page" class="app-content page-content container mx-auto max-w-xl p-4 mt-6 pb-24 hidden">
         <div class="bg-white rounded-lg shadow-md p-6">
             <!-- Profile Info Section -->
             <div id="profile-view" class="text-center">
@@ -224,17 +279,20 @@
                 <div><p class="text-2xl font-bold">5</p><p class="text-gray-500 text-sm">Followers</p></div>
                 <div><p id="user-post-count-display" class="text-2xl font-bold">0</p><p class="text-gray-500 text-sm">Posts</p></div>
             </div>
-            <!-- Links (Still placeholder) -->
+            <!-- Links (Logout now works) -->
             <div class="space-y-2">
                 <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200"><span class="font-medium"><i class="fas fa-wallet mr-2"></i> My Wallet</span><i class="fas fa-chevron-right text-gray-500"></i></a>
                 <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200"><span class="font-medium"><i class="fas fa-cog mr-2"></i> Settings</span><i class="fas fa-chevron-right text-gray-500"></i></a>
-                <a href="#" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 text-red-600"><span class="font-medium"><i class="fas fa-sign-out-alt mr-2"></i> Log Out</span><i class="fas fa-chevron-right"></i></a>
+                <a href="#" id="logout-btn" class="flex items-center justify-between p-3 bg-gray-100 rounded-lg hover:bg-gray-200 text-red-600">
+                    <span class="font-medium"><i class="fas fa-sign-out-alt mr-2"></i> Log Out</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
             </div>
         </div>
     </main>
 
-    <!-- Bottom Navigation Bar (Mobile Only) -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.06)] border-t border-gray-200">
+    <!-- Bottom Navigation Bar (HIDDEN BY DEFAULT) -->
+    <nav id="bottom-nav-bar" class="app-content md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.06)] border-t border-gray-200">
         <div class="flex justify-around items-center h-16">
             <a href="#" id="nav-create" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="create-page"><i class="fas fa-plus-square text-xl"></i><span class="text-xs mt-1">Create</span></a>
             <a href="#" id="nav-reels" class="nav-button flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 w-1/5" data-page="reels-page"><i class="fas fa-film text-xl"></i><span class="text-xs mt-1">Reels</span></a>
@@ -260,7 +318,7 @@
         </div>
     </div>
     
-    <!-- NEW: Video Player Modal -->
+    <!-- Video Player Modal -->
     <div id="video-player-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 opacity-0 pointer-events-none">
         <div class="modal-content bg-black w-full max-w-lg transform -translate-y-10">
             <video id="modal-video-player" class="w-full" controls autoplay playsinline></video>
@@ -279,7 +337,9 @@
             getAuth, 
             signInAnonymously, 
             signInWithCustomToken, 
-            onAuthStateChanged 
+            onAuthStateChanged,
+            GoogleAuthProvider, // NEW: Import Google Auth
+            signInWithPopup     // NEW: Import Sign-in method
         } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
         import { 
             getFirestore, 
@@ -298,7 +358,7 @@
             arrayUnion,
             arrayRemove
         } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-        
+
         // --- GLOBAL STATE ---
         let db, auth;
         let currentUserId = null;
@@ -306,7 +366,7 @@
         let postsColRef;
         let reelsColRef;
         let selectedThumbnailFile = null;
-        let selectedVideoFile = null; // NEW: For video file
+        let selectedVideoFile = null;
         
         // --- UI ELEMENTS ---
         const sparkBalanceEl = document.getElementById('spark-balance');
@@ -317,6 +377,7 @@
         const closeModalBtn = document.getElementById('close-modal-btn');
         const claimBonusBtn = document.getElementById('claim-bonus-btn');
         const bonusSubtitle = document.getElementById('bonus-subtitle');
+        const welcomeUsername = document.getElementById('welcome-username');
         const videoGridContainer = document.getElementById('video-grid-container');
         const loadingPostsEl = document.getElementById('loading-posts');
         const reelsPageContainer = document.getElementById('reels-page');
@@ -330,7 +391,6 @@
         const thumbnailPreviewContainer = document.getElementById('thumbnail-preview-container');
         const thumbnailPreviewImg = document.getElementById('thumbnail-preview-img');
         const thumbnailFileName = document.getElementById('thumbnail-file-name');
-        // NEW: Video file UI
         const videoFileInput = document.getElementById('video-file-input');
         const videoUploadBtn = document.getElementById('video-upload-btn');
         const videoPreviewContainer = document.getElementById('video-preview-container');
@@ -352,16 +412,28 @@
         const bioInput = document.getElementById('bio-input');
         const profilePicUrlInput = document.getElementById('profile-pic-url-input');
         const profileEditPicImgEl = document.getElementById('profile-edit-pic-img');
+        const logoutBtn = document.getElementById('logout-btn');
         
-        // --- NEW: Video Player Modal UI ---
+        // --- Video Player Modal UI ---
         const videoPlayerModal = document.getElementById('video-player-modal');
         const modalVideoPlayer = document.getElementById('modal-video-player');
         const closeVideoModalBtn = document.getElementById('close-video-modal-btn');
+        
+        // --- App Containers ---
+        const loginPage = document.getElementById('login-page');
+        const authLoading = document.getElementById('auth-loading');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const mainHeader = document.getElementById('main-header');
+        const bottomNavBar = document.getElementById('bottom-nav-bar');
+        const appContentElements = document.querySelectorAll('.app-content'); // Main app container
+        const homePage = document.getElementById('home-page'); // Default page
+        
+        // --- NEW: Complete Profile Page UI ---
+        const completeProfilePage = document.getElementById('complete-profile-page');
+        const completeProfileForm = document.getElementById('complete-profile-form');
 
         // --- FIREBASE CONFIG (Mandatory) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        // --- YOUR NEW 'vidchat-new' CONFIG ---
         const userProvidedConfig = {
             apiKey: "AIzaSyAcBqHhJfwhcwCg2zvSkmP_fKWC34lbdos",
             authDomain: "vidchat-new.firebaseapp.com",
@@ -371,8 +443,6 @@
             appId: "1:236995445201:web:58cc3fbc0dc3aeca3960f0",
             measurementId: "G-XTZHL6PTZH"
         };
-        // --- END NEW CONFIG ---
-
         const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config !== '{}'
             ? JSON.parse(__firebase_config) 
             : userProvidedConfig;
@@ -382,7 +452,6 @@
         const CLOUDINARY_CLOUD_NAME = 'dpq8izmc8';
         const CLOUDINARY_UPLOAD_PRESET = 'vidchat_preset';
 
-
         // --- TOAST FUNCTION ---
         function showToast(message) {
             toastEl.textContent = message;
@@ -390,6 +459,22 @@
             setTimeout(() => { 
                 toastEl.className = toastEl.className.replace("show", ""); 
             }, 3000);
+        }
+        
+        // --- NEW: Helper function to show/hide app
+        function showAppUI(isLoggedIn) {
+            if (isLoggedIn) {
+                appContentElements.forEach(el => el.style.display = ''); // Show app
+                homePage.style.display = ''; // Show home by default
+                bottomNavBar.style.display = 'flex'; // Fix for nav
+                mainHeader.style.display = 'block'; // Fix for header
+                loginPage.style.display = 'none';
+                completeProfilePage.style.display = 'none';
+            } else {
+                appContentElements.forEach(el => el.style.display = 'none'); // Hide app
+                loginPage.style.display = 'block';
+                completeProfilePage.style.display = 'none';
+            }
         }
 
         // --- FIREBASE INITIALIZATION ---
@@ -402,56 +487,102 @@
                 postsColRef = collection(db, "posts");
                 reelsColRef = collection(db, "reels");
 
+                // --- NEW AUTH FLOW ---
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUserId = user.uid;
-                        accountUserIdEl.textContent = `User ID: ${currentUserId.substring(0, 8)}...`;
-                        
-                        await setupUserDocument(currentUserId);
-                        listenToUserDocument(currentUserId);
-                        
-                        listenToPosts();
-                        listenToReels();
+                        const userDocRef = doc(db, "users", user.uid);
+                        const userDocSnap = await getDoc(userDocRef);
 
+                        if (userDocSnap.exists()) {
+                            // --- EXISTING USER ---
+                            listenToUserDocument(currentUserId);
+                            listenToPosts();
+                            listenToReels();
+                            showAppUI(true); // Show the main app
+                        } else {
+                            // --- NEW USER ---
+                            // Show the "Complete Profile" page
+                            loginPage.style.display = 'none';
+                            completeProfilePage.style.display = 'block';
+                            
+                            // Pre-fill the form with Google data
+                            document.getElementById('profile-setup-pic-img').src = user.photoURL || `https://placehold.co/100x100/fca5a5/333?text=${user.displayName.charAt(0).toUpperCase()}`;
+                            document.getElementById('profile-setup-pic-url').value = user.photoURL || '';
+                            document.getElementById('profile-setup-displayname').value = user.displayName || '';
+                        }
                     } else {
+                        // --- LOGGED OUT ---
                         currentUserId = null;
                         currentUserData = {};
                         updateSparkBalance(0);
-                        accountUserIdEl.textContent = "Not logged in.";
+                        showAppUI(false); // Show the login page
                     }
+                    // Show login button once auth is ready
+                    authLoading.style.display = 'none';
+                    googleLoginBtn.style.display = 'flex';
                 });
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
 
             } catch (error) {
                 console.error("Firebase Init Error:", error);
                 showToast("Error connecting to app services.");
+                authLoading.textContent = "Error. Please refresh.";
             }
         }
 
-        // --- USER DATA FUNCTIONS ---
-        async function setupUserDocument(userId) {
-            const userDocRef = doc(db, "users", userId); 
-            const userDocSnap = await getDoc(userDocRef);
-            if (!userDocSnap.exists()) {
+        // --- NEW: Complete Profile Form Submission ---
+        completeProfileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUserId) return;
+
+            const username = document.getElementById('profile-setup-username').value.replace(/ /g, ''); // Remove spaces
+            const displayName = document.getElementById('profile-setup-displayname').value;
+            
+            if (!username) {
+                showToast("Please enter a username.");
+                return;
+            }
+            
+            // Note: A real app would check if username is unique here.
+            // We will skip that for simplicity for now.
+            
+            const saveBtn = document.getElementById('save-new-profile-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Saving...";
+
+            try {
+                const userDocRef = doc(db, "users", currentUserId);
                 await setDoc(userDocRef, {
-                    uid: userId,
-                    username: "AnonymousUser",
-                    bio: "Welcome to VidChat!",
-                    profilePicUrl: `https://placehold.co/100x100/fca5a5/333?text=A`,
+                    uid: currentUserId,
+                    username: username,
+                    displayName: displayName,
+                    bio: document.getElementById('profile-setup-bio').value,
+                    profilePicUrl: document.getElementById('profile-setup-pic-url').value || `https://placehold.co/100x100/fca5a5/333?text=${username.charAt(0).toUpperCase()}`,
                     sparkBalance: 100,
                     lastBonusClaim: null,
                     postCount: 0,
                     likedContent: []
                 });
-                showToast("Welcome! You've received 100 Sparks! ✨");
-            }
-        }
+                
+                // Now, load the app
+                listenToUserDocument(currentUserId);
+                listenToPosts();
+                listenToReels();
+                showAppUI(true);
+                
+                showToast(`Welcome, @${username}! You've received 100 Sparks! ✨`);
 
+            } catch (error) {
+                console.error("Error creating profile:", error);
+                showToast("Error saving profile. Please try again.");
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save and Continue";
+            }
+        });
+
+
+        // --- USER DATA FUNCTIONS ---
+        // (setupUserDocument is now removed)
         function listenToUserDocument(userId) {
             const userDocRef = doc(db, "users", userId);
             onSnapshot(userDocRef, (docSnap) => {
@@ -460,7 +591,11 @@
                     updateSparkBalance(currentUserData.sparkBalance);
                     checkBonusButtonState(currentUserData.lastBonusClaim);
                     
-                    accountUsernameEl.textContent = currentUserData.username;
+                    // Update welcome message
+                    welcomeUsername.textContent = currentUserData.username || "User";
+                    
+                    // Update Account Page
+                    accountUsernameEl.textContent = `@${currentUserData.username}`;
                     accountBioEl.textContent = currentUserData.bio;
                     userPostCountDisplayEl.textContent = currentUserData.postCount || 0;
                     
@@ -468,7 +603,7 @@
                     profilePicImgEl.src = picUrl;
                     profileEditPicImgEl.src = picUrl;
 
-                    usernameInput.value = currentUserData.username;
+                    usernameInput.value = currentUserData.displayName; // Edit form uses Display Name
                     bioInput.value = currentUserData.bio;
                     profilePicUrlInput.value = currentUserData.profilePicUrl;
                 }
@@ -513,7 +648,7 @@
                 console.log("Database 'posts' is empty. Adding starter videos...");
                 const batch = writeBatch(db);
                 const starterVideos = [
-                    { title: "Welcome to VidChat!", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.jpg", creatorUsername: "VidChat Team", creatorProfilePic: "https://placehold.co/40x40/8b5cf6/333?text=V", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
+                    { title: "Welcome to VidChat!", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/dog.jpg", creatorUsername: "VidChatTeam", creatorProfilePic: "https://placehold.co/40x40/8b5cf6/333?text=V", creatorId: "system", sparkCount: 25, likeCount: 15, createdAt: serverTimestamp() },
                     { title: "My First Short Film", videoUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/sample.mp4", thumbnailUrl: "https://res.cloudinary.com/demo/video/upload/c_scale,w_400/sample.jpg", creatorUsername: "CreatorAlice", creatorProfilePic: "https://placehold.co/40x40/93c5fd/333?text=A", creatorId: "alice123", sparkCount: 10, likeCount: 5, createdAt: serverTimestamp() },
                 ];
                 starterVideos.forEach(video => batch.set(doc(postsColRef), video));
@@ -600,7 +735,6 @@
             const likeButton = article.querySelector('.like-button');
             likeButton.addEventListener('click', (e) => { e.stopPropagation(); handleLike(postId, 'posts', likeButton); });
             
-            // NEW: Open video player modal
             const playButton = article.querySelector('.play-video-btn');
             playButton.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -694,7 +828,6 @@
             const likeButton = div.querySelector('.like-button-reel');
             likeButton.addEventListener('click', (e) => { e.stopPropagation(); handleLike(reelId, 'reels', likeButton); });
             
-            // NEW: Play video when it scrolls into view
             const video = div.querySelector('video');
             const observer = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting) video.play();
@@ -706,6 +839,23 @@
         }
 
         // --- EVENT HANDLERS ---
+        
+        // NEW: Handle Google Sign-In
+        googleLoginBtn.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                // onAuthStateChanged will handle the rest
+            } catch (error) {
+                console.error("Error signing in with Google:", error);
+                showToast("Error signing in. Please try again.");
+            }
+        });
+
+        // NEW: Handle Log Out
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
 
         // Handle Daily Bonus Claim
         claimBonusBtn.addEventListener('click', async () => {
@@ -892,7 +1042,6 @@
             if (!thumbnailUrl) {
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = "Publish Post";
-                // We should ideally delete the video that just uploaded, but we'll skip that for simplicity.
                 return;
             }
 
@@ -947,33 +1096,37 @@
 
         // --- Account Page Edit/Save Logic ---
         editProfileBtn.addEventListener('click', () => {
+            // Pre-fill with current data from the `currentUserData` object
+            usernameInput.value = currentUserData.displayName; // Note: We edit 'displayName' not 'username'
+            bioInput.value = currentUserData.bio;
+            profilePicUrlInput.value = currentUserData.profilePicUrl;
+            profileEditPicImgEl.src = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
+
             profileViewEl.classList.add('hidden');
             profileEditViewEl.classList.remove('hidden');
         });
         cancelEditBtn.addEventListener('click', () => {
             profileViewEl.classList.remove('hidden');
             profileEditViewEl.classList.add('hidden');
-            usernameInput.value = currentUserData.username;
-            bioInput.value = currentUserData.bio;
-            profilePicUrlInput.value = currentUserData.profilePicUrl;
-            profileEditPicImgEl.src = currentUserData.profilePicUrl || `https://placehold.co/100x100/fca5a5/333?text=${currentUserData.username.charAt(0).toUpperCase()}`;
         });
         saveProfileBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             if (!currentUserId) return;
-            const newUsername = usernameInput.value;
+            const newDisplayName = usernameInput.value;
             const newBio = bioInput.value;
             const newPicUrl = profilePicUrlInput.value;
-            if (!newUsername) {
-                showToast("Username cannot be empty.");
+            
+            if (!newDisplayName) {
+                showToast("Display Name cannot be empty.");
                 return;
             }
+            
             saveProfileBtn.disabled = true;
             saveProfileBtn.textContent = "Saving...";
             const userDocRef = doc(db, "users", currentUserId);
             try {
                 await updateDoc(userDocRef, {
-                    username: newUsername,
+                    displayName: newDisplayName, // Save display name
                     bio: newBio,
                     profilePicUrl: newPicUrl
                 });
@@ -996,8 +1149,6 @@
         // --- PAGE NAVIGATION ---
         const navButtons = document.querySelectorAll('.nav-button');
         const pages = document.querySelectorAll('.page-content');
-        const mainHeader = document.getElementById('main-header');
-        const bodyEl = document.body;
 
         navButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -1005,17 +1156,24 @@
                 const targetPageId = button.dataset.page;
                 
                 if (targetPageId === 'reels-page') {
-                    mainHeader.classList.add('hidden');
+                    mainHeader.style.display = 'none';
                     bodyEl.classList.add('reels-active');
                     document.getElementById('reels-page').classList.add('reels-active');
                 } else {
-                    mainHeader.classList.remove('hidden');
+                    mainHeader.style.display = 'block';
                     bodyEl.classList.remove('reels-active');
                     document.getElementById('reels-page').classList.remove('reels-active');
                 }
-                pages.forEach(page => page.classList.add('hidden'));
+                
+                // Hide all pages
+                pages.forEach(page => {
+                    if (page.id !== 'login-page' && page.id !== 'complete-profile-page') {
+                        page.style.display = 'none';
+                    }
+                });
+                
                 const targetPage = document.getElementById(targetPageId);
-                if (targetPage) targetPage.classList.remove('hidden');
+                if (targetPage) targetPage.style.display = 'block';
 
                 navButtons.forEach(btn => {
                     btn.classList.remove('text-indigo-600', 'font-medium');
@@ -1045,7 +1203,7 @@
             if (e.target === modal) closeModalBtn.click();
         });
         
-        // --- NEW: VIDEO MODAL (Home Page) ---
+        // --- VIDEO MODAL (Home Page) ---
         closeVideoModalBtn.addEventListener('click', () => {
             videoPlayerModal.classList.add('opacity-0', 'pointer-events-none');
             videoPlayerModal.querySelector('.modal-content').classList.add('-translate-y-10');
@@ -1057,7 +1215,6 @@
         });
 
         // --- START THE APP ---
-        // We still need to enable Firestore & Auth in the NEW 'vidchat-new' project
         initializeFirebase();
 
     </script>
